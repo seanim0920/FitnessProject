@@ -8,6 +8,7 @@ import { EventDetailsView } from "@event-details-boundary/Details"
 import { useLoadEventDetails } from "@event/DetailsQuery"
 import { StaticScreenProps, useNavigation } from "@react-navigation/native"
 import { EventID } from "TiFShared/domain-models/Event"
+import { PortalProvider } from "@gorhom/portal"
 
 export const eventDetailsScreens = () => ({
   eventDetails: {
@@ -47,11 +48,13 @@ type EventDetailsScreenProps = StaticScreenProps<{
 const EventDetailsScreen = ({ route }: EventDetailsScreenProps) => {
   const navigation = useNavigation()
   return (
+    // <PortalProvider>
     <EventDetailsContentView
       result={useLoadEventDetails(route.params.id)}
       onExploreOtherEventsTapped={() => navigation.navigate("home")}
     >
       {(state) => <EventDetailsView state={state} />}
     </EventDetailsContentView>
+    // </PortalProvider>
   )
 }
