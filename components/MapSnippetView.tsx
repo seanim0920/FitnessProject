@@ -1,4 +1,12 @@
-import React, { useRef, useState, useCallback, ReactNode } from "react"
+import React, {
+  useRef,
+  useState,
+  useCallback,
+  ReactNode,
+  forwardRef,
+  LegacyRef,
+  useEffect
+} from "react"
 import {
   Platform,
   View,
@@ -22,24 +30,34 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useScreenBottomPadding } from "./Padding"
 import { FullWindowOverlay } from "react-native-screens"
 
-export type MapSnippetProps = {
+export type ExpandableMapSnippetProps = {
+  isExpanded: boolean
+  onExpansionChanged: (isExpanded: boolean) => void
   region: Region
   overlay?: ReactNode
   marker?: ReactNode
   style?: StyleProp<ViewStyle>
-} & MapViewProps
+  collapsedMapProps?: MapViewProps
+  expandedMapProps?: MapViewProps
+}
 
 /**
  * A snippet of a map with an expand button that
  * transitions to a full-screen map using Reanimated.
  */
-export const MapSnippetView = ({
-  region,
-  overlay,
-  marker,
-  style,
-  ...mapProps
-}: MapSnippetProps) => {
+export const ExpandableMapSnippetView = forwardRef(function Snippet(
+  {
+    isExpanded,
+    onExpansionChanged,
+    region,
+    overlay,
+    marker,
+    style,
+    collapsedMapProps,
+    expandedMapProps
+  }: ExpandableMapSnippetProps,
+  ref: LegacyRef<MapView>
+) {
   const snippetRef = useRef<View>(null)
   const [snippetLayout, setSnippetLayout] = useState<
     LayoutRectangle | undefined
@@ -47,35 +65,38 @@ export const MapSnippetView = ({
   const [overlayLayout, setOverlayLayout] = useState<
     LayoutRectangle | undefined
   >()
-  const [portalVisible, setPortalVisible] = useState(false)
   const progress = useSharedValue(0)
   const isExpanding = useSharedValue(false)
+  useEffect(() => {
+    isExpanding.value = isExpanded
+  }, [isExpanding, isExpanded])
   const expand = useCallback(() => {
     if (!snippetRef.current) return
     snippetRef.current.measure((_, __, width, height, pageX, pageY) => {
       setSnippetLayout({ x: pageX, y: pageY, width, height })
       isExpanding.value = true
       progress.value = 0
-      setPortalVisible(true)
+      onExpansionChanged(true)
       progress.value = withTiFDefaultSpring(1)
     })
-  }, [progress, isExpanding])
+  }, [progress, isExpanding, onExpansionChanged])
   const collapse = useCallback(() => {
     isExpanding.value = false
     progress.value = withTiFDefaultSpring(0, (finished) => {
       "worklet"
       if (finished) {
-        runOnJS(setPortalVisible)(false)
+        runOnJS(onExpansionChanged)(false)
       }
     })
-  }, [progress, isExpanding])
+  }, [progress, isExpanding, onExpansionChanged])
   return (
     <View style={style}>
       <View style={styles.container}>
         <View ref={snippetRef} style={styles.mapContainer}>
           {overlayLayout && (
             <MapView
-              {...mapProps}
+              {...collapsedMapProps}
+              ref={ref}
               style={[{ height: Math.max(300, 200 + overlayLayout.height) }]}
               loadingEnabled
               zoomEnabled={false}
@@ -108,7 +129,7 @@ export const MapSnippetView = ({
         </View>
         {snippetLayout && overlayLayout && (
           <ExpandedMapView
-            isVisible={portalVisible}
+            isVisible={isExpanded}
             region={region}
             onCollapsed={collapse}
             isExpanding={isExpanding}
@@ -117,19 +138,24 @@ export const MapSnippetView = ({
             marker={marker}
             mapLayout={snippetLayout}
             overlayLayout={overlayLayout}
+            expandedMapProps={expandedMapProps}
           />
         )}
       </View>
     </View>
   )
-}
+})
 
-type ExpandedMapProps = MapSnippetProps & {
+type ExpandedMapProps = {
+  region: Region
+  overlay?: ReactNode
+  marker?: ReactNode
   progress: SharedValue<number>
   isExpanding: SharedValue<boolean>
   mapLayout: LayoutRectangle
   overlayLayout: LayoutRectangle
   isVisible: boolean
+  expandedMapProps?: MapViewProps
   onCollapsed: () => void
 }
 
@@ -145,7 +171,7 @@ const ExpandedMapView = ({
   marker,
   progress,
   isExpanding,
-  ...mapProps
+  expandedMapProps
 }: ExpandedMapProps) => {
   const safeAreaInsets = useSafeAreaInsets()
   const windowDimensions = useWindowDimensions()
@@ -192,7 +218,7 @@ const ExpandedMapView = ({
       {isVisible && (
         <Animated.View style={animatedMapStyle}>
           <MapView
-            {...mapProps}
+            {...expandedMapProps}
             style={StyleSheet.absoluteFill}
             initialRegion={region}
             mapPadding={{
@@ -263,7 +289,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "white",
     width: "100%",
-    padding: 16
+    overflow: "hidden"
   },
   fullscreenOverlayContainer: {
     position: "absolute",
@@ -275,6 +301,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "white",
     width: "100%",
-    padding: 16
+    overflow: "hidden"
   }
 })

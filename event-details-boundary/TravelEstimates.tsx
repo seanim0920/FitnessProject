@@ -1,5 +1,5 @@
 import { AvatarMapMarkerView } from "@components/AvatarMapMarker"
-import { MapSnippetView } from "@components/MapSnippetView"
+import { ExpandableMapSnippetView } from "@components/MapSnippetView"
 import { BodyText, Caption, CaptionTitle, Headline } from "@components/Text"
 import { Ionicon, RoundedIonicon } from "@components/common/Icons"
 import { ClientSideEvent } from "@event/ClientSideEvent"
@@ -173,9 +173,7 @@ export const EventTravelEstimatesView = ({
   result,
   style
 }: EventTravelEstimatesProps) => {
-  const [overlayLayout, setOverlayLayout] = useState<
-    LayoutRectangle | undefined
-  >(undefined)
+  const [isExpanded, setIsExpanded] = useState(false)
   return (
     <View style={[style]}>
       {result.status === "disabled" && (
@@ -199,14 +197,16 @@ export const EventTravelEstimatesView = ({
         </NoticeLabel>
       )}
       <Animated.View layout={TiFDefaultLayoutTransition}>
-        <MapSnippetView
+        <ExpandableMapSnippetView
+          isExpanded={isExpanded}
+          onExpansionChanged={setIsExpanded}
           region={{
             ...location.coordinate,
             latitudeDelta: 0.007,
             longitudeDelta: 0.007
           }}
           overlay={
-            <>
+            <View style={styles.overlay}>
               <Headline
                 maxFontSizeMultiplier={FontScaleFactors.xxxLarge}
                 style={styles.directionsText}
@@ -233,18 +233,20 @@ export const EventTravelEstimatesView = ({
                   style={styles.travelTypeButton}
                 />
               </View>
-            </>
+            </View>
           }
-          customMapStyle={[
-            {
-              featureType: "poi",
-              stylers: [{ visibility: "off" }]
-            },
-            {
-              featureType: "transit",
-              stylers: [{ visibility: "off" }]
-            }
-          ]}
+          collapsedMapProps={{
+            customMapStyle: [
+              {
+                featureType: "poi",
+                stylers: [{ visibility: "off" }]
+              },
+              {
+                featureType: "transit",
+                stylers: [{ visibility: "off" }]
+              }
+            ]
+          }}
           marker={
             <AvatarMapMarkerView
               name={host.name}
@@ -385,15 +387,7 @@ const styles = StyleSheet.create({
     width: "100%",
     borderRadius: 12
   },
-  overlayContainer: {
-    paddingHorizontal: 16
-  },
   overlay: {
-    position: "absolute",
-    bottom: 16,
-    marginHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: "white",
     width: "100%",
     padding: 16
   },

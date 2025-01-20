@@ -1,4 +1,4 @@
-import { MapSnippetView } from "@components/MapSnippetView"
+import { ExpandableMapSnippetView } from "@components/MapSnippetView"
 import { Headline } from "@components/Text"
 import { TiFFormScrollView } from "@components/form-components/ScrollView"
 import { XEROX_ALTO_DEFAULT_REGION } from "@explore-events-boundary"
@@ -21,7 +21,7 @@ export const Basic = () => (
         <TiFFormScrollView>
           <View style={{ height: 64 }} />
           <Headline>Hello World</Headline>
-          <MapSnippetView region={XEROX_ALTO_DEFAULT_REGION} />
+          <ExpandableMapSnippetView region={XEROX_ALTO_DEFAULT_REGION} />
           <Headline>Hello World</Headline>
         </TiFFormScrollView>
       </SafeAreaView>
