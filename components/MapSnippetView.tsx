@@ -1,12 +1,8 @@
 import React, { useRef, useState, useCallback } from "react"
 import {
   View,
-  Text,
   Dimensions,
   StyleSheet,
-  Pressable,
-  findNodeHandle,
-  UIManager,
   StyleProp,
   ViewStyle,
   LayoutRectangle
@@ -16,13 +12,12 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   runOnJS,
-  interpolate,
-  Extrapolation,
   SharedValue
 } from "react-native-reanimated"
-import { LocationCoordinate2D } from "TiFShared/domain-models/LocationCoordinate2D"
 import { Portal } from "@gorhom/portal"
 import { withTiFDefaultSpring } from "@lib/Reanimated"
+import { TouchableIonicon } from "./common/Icons"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 export type MapSnippetProps = {
   region: Region
@@ -36,7 +31,7 @@ const SCREEN_HEIGHT = Dimensions.get("window").height
  * A snippet of a map with an expand button that
  * transitions to a full-screen map using Reanimated.
  */
-export const MapSnippetView = ({ region }: MapSnippetProps) => {
+export const MapSnippetView = ({ region, style }: MapSnippetProps) => {
   const snippetRef = useRef<View>(null)
   const [snippetLayout, setSnippetLayout] = useState<
     LayoutRectangle | undefined
@@ -46,7 +41,6 @@ export const MapSnippetView = ({ region }: MapSnippetProps) => {
   const isExpanding = useSharedValue(false)
   const expand = useCallback(() => {
     if (!snippetRef.current) return
-
     snippetRef.current.measure((_, __, width, height, pageX, pageY) => {
       setSnippetLayout({ x: pageX, y: pageY, width, height })
       isExpanding.value = true
@@ -65,25 +59,30 @@ export const MapSnippetView = ({ region }: MapSnippetProps) => {
     })
   }, [progress, isExpanding])
   return (
-    <View style={styles.container}>
-      <View ref={snippetRef} style={styles.snippetContainer}>
-        <MapView style={StyleSheet.absoluteFill} initialRegion={region}>
-          <Marker coordinate={region} />
-        </MapView>
-        <Pressable onPress={expand} style={styles.expandButton}>
-          <Text style={styles.expandButtonText}>Expand</Text>
-        </Pressable>
+    <View style={style}>
+      <View style={styles.container}>
+        <View ref={snippetRef} style={styles.snippetContainer}>
+          <MapView style={StyleSheet.absoluteFill} initialRegion={region}>
+            <Marker coordinate={region} />
+          </MapView>
+          <TouchableIonicon
+            icon={{ name: "contract" }}
+            onPress={expand}
+            activeOpacity={0.8}
+            style={styles.expandButton}
+          />
+        </View>
+        {snippetLayout && (
+          <PortalView
+            isVisible={portalVisible}
+            region={region}
+            onCollapsed={collapse}
+            isExpanding={isExpanding}
+            progress={progress}
+            layout={snippetLayout}
+          />
+        )}
       </View>
-      {snippetLayout && (
-        <PortalView
-          isVisible={portalVisible}
-          region={region}
-          onCollapsed={collapse}
-          isExpanding={isExpanding}
-          progress={progress}
-          layout={snippetLayout}
-        />
-      )}
     </View>
   )
 }
@@ -115,20 +114,23 @@ const PortalView = ({
       top: withTiFDefaultSpring(isExpanding.value ? 0 : y),
       left: withTiFDefaultSpring(isExpanding.value ? 0 : x),
       width: withTiFDefaultSpring(isExpanding.value ? SCREEN_WIDTH : width),
-      height: withTiFDefaultSpring(isExpanding.value ? SCREEN_HEIGHT : height),
-      zIndex: 9999
+      height: withTiFDefaultSpring(isExpanding.value ? SCREEN_HEIGHT : height)
     }
   }, [layout])
+  const { top } = useSafeAreaInsets()
   return (
     <Portal>
       {isVisible && (
-        <Animated.View style={[animatedMapStyle]}>
+        <Animated.View style={animatedMapStyle}>
           <MapView style={StyleSheet.absoluteFill} initialRegion={region}>
             <Marker coordinate={region} />
           </MapView>
-          <Pressable onPress={onCollapsed} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>✕</Text>
-          </Pressable>
+          <TouchableIonicon
+            icon={{ name: "contract" }}
+            onPress={onCollapsed}
+            activeOpacity={0.8}
+            style={[styles.closeButton, { top }]}
+          />
         </Animated.View>
       )}
     </Portal>
@@ -141,38 +143,29 @@ const styles = StyleSheet.create({
   },
   snippetContainer: {
     height: 150,
-    margin: 16,
     borderRadius: 8,
     overflow: "hidden"
   },
-  expandButton: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 4
-  },
-  expandButtonText: {
-    color: "#fff",
-    fontWeight: "600"
-  },
   closeButton: {
     position: "absolute",
-    top: 40,
-    right: 20,
+    right: 24,
+    top: 24,
     width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    minHeight: 40,
+    borderRadius: 12,
+    backgroundColor: "white",
     alignItems: "center",
     justifyContent: "center"
   },
-  closeButtonText: {
-    color: "#fff",
-    fontSize: 24,
-    lineHeight: 28,
-    fontWeight: "bold"
+  expandButton: {
+    position: "absolute",
+    right: 8,
+    top: 8,
+    width: 40,
+    minHeight: 40,
+    borderRadius: 12,
+    backgroundColor: "white",
+    alignItems: "center",
+    justifyContent: "center"
   }
 })
