@@ -256,7 +256,10 @@ export const EventTravelEstimatesView = ({
               imageURL={host.profileImageURL ?? undefined}
             />
           }
-          onMarkerPressed={() => presentProfile(host.id)}
+          onMarkerPressed={() => {
+            setIsExpanded(false)
+            presentProfile(host.id)
+          }}
         />
       </Animated.View>
     </View>

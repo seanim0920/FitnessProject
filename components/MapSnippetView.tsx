@@ -146,6 +146,7 @@ export const ExpandableMapSnippetView = forwardRef(function Snippet(
             marker={marker}
             mapLayout={snippetLayout}
             overlayLayout={overlayLayout}
+            onMarkerPressed={onMarkerPressed}
             expandedMapProps={expandedMapProps}
           />
         )}
