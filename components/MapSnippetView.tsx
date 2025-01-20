@@ -33,6 +33,7 @@ import { FullWindowOverlay } from "react-native-screens"
 export type ExpandableMapSnippetProps = {
   isExpanded: boolean
   onExpansionChanged: (isExpanded: boolean) => void
+  onMarkerPressed?: () => void
   region: Region
   overlay?: ReactNode
   marker?: ReactNode
@@ -53,6 +54,7 @@ export const ExpandableMapSnippetView = forwardRef(function Snippet(
     overlay,
     marker,
     style,
+    onMarkerPressed,
     collapsedMapProps,
     expandedMapProps
   }: ExpandableMapSnippetProps,
@@ -109,7 +111,13 @@ export const ExpandableMapSnippetView = forwardRef(function Snippet(
               }}
               initialRegion={region}
             >
-              <Marker coordinate={region}>{marker}</Marker>
+              <Marker
+                coordinate={region}
+                tracksViewChanges={false}
+                onPress={onMarkerPressed}
+              >
+                {marker}
+              </Marker>
             </MapView>
           )}
           <TouchableIonicon
@@ -156,6 +164,7 @@ type ExpandedMapProps = {
   overlayLayout: LayoutRectangle
   isVisible: boolean
   expandedMapProps?: MapViewProps
+  onMarkerPressed?: () => void
   onCollapsed: () => void
 }
 
@@ -171,6 +180,7 @@ const ExpandedMapView = ({
   marker,
   progress,
   isExpanding,
+  onMarkerPressed,
   expandedMapProps
 }: ExpandedMapProps) => {
   const safeAreaInsets = useSafeAreaInsets()
@@ -228,7 +238,13 @@ const ExpandedMapView = ({
               bottom: overlayLayout.height + 24
             }}
           >
-            <Marker coordinate={region}>{marker}</Marker>
+            <Marker
+              coordinate={region}
+              tracksViewChanges={false}
+              onPress={onMarkerPressed}
+            >
+              {marker}
+            </Marker>
           </MapView>
           <Animated.View
             style={[styles.fullscreenOverlayContainer, overlayStyle]}

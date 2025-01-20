@@ -1,5 +1,6 @@
 import { AvatarMapMarkerView } from "@components/AvatarMapMarker"
 import { ExpandableMapSnippetView } from "@components/MapSnippetView"
+import { useCoreNavigation } from "@components/Navigation"
 import { BodyText, Caption, CaptionTitle, Headline } from "@components/Text"
 import { Ionicon, RoundedIonicon } from "@components/common/Icons"
 import { ClientSideEvent } from "@event/ClientSideEvent"
@@ -26,6 +27,7 @@ import { openSettings } from "expo-linking"
 import { LocationAccuracy } from "expo-location"
 import { CodedError } from "expo-modules-core"
 import { ReactNode, useState } from "react"
+import { Pressable } from "react-native"
 import {
   LayoutRectangle,
   Platform,
@@ -174,6 +176,7 @@ export const EventTravelEstimatesView = ({
   style
 }: EventTravelEstimatesProps) => {
   const [isExpanded, setIsExpanded] = useState(false)
+  const { presentProfile } = useCoreNavigation()
   return (
     <View style={[style]}>
       {result.status === "disabled" && (
@@ -253,6 +256,7 @@ export const EventTravelEstimatesView = ({
               imageURL={host.profileImageURL ?? undefined}
             />
           }
+          onMarkerPressed={() => presentProfile(host.id)}
         />
       </Animated.View>
     </View>
