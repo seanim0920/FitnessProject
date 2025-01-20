@@ -1,4 +1,5 @@
 import { AvatarMapMarkerView } from "@components/AvatarMapMarker"
+import { MapSnippetView } from "@components/MapSnippetView"
 import { BodyText, Caption, CaptionTitle, Headline } from "@components/Text"
 import { Ionicon, RoundedIonicon } from "@components/common/Icons"
 import { ClientSideEvent } from "@event/ClientSideEvent"
@@ -197,84 +198,60 @@ export const EventTravelEstimatesView = ({
           precise ETA.
         </NoticeLabel>
       )}
-      <Animated.View
-        layout={TiFDefaultLayoutTransition}
-        style={styles.mapContainer}
-      >
-        {overlayLayout && (
-          <Animated.View entering={FadeIn.duration(300)}>
-            <MapView
-              style={[
-                styles.mapDimensions,
-                { height: Math.max(300, 200 + overlayLayout.height) }
-              ]}
-              loadingEnabled
-              zoomEnabled={false}
-              scrollEnabled={false}
-              initialRegion={{
-                ...location.coordinate,
-                latitudeDelta: 0.007,
-                longitudeDelta: 0.007
-              }}
-              mapPadding={{
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: overlayLayout.height + 16
-              }}
-              customMapStyle={[
-                {
-                  featureType: "poi",
-                  stylers: [{ visibility: "off" }]
-                },
-                {
-                  featureType: "transit",
-                  stylers: [{ visibility: "off" }]
-                }
-              ]}
-            >
-              <Marker coordinate={location.coordinate}>
-                <AvatarMapMarkerView
-                  name={host.name}
-                  imageURL={host.profileImageURL ?? undefined}
+      <Animated.View layout={TiFDefaultLayoutTransition}>
+        <MapSnippetView
+          region={{
+            ...location.coordinate,
+            latitudeDelta: 0.007,
+            longitudeDelta: 0.007
+          }}
+          overlay={
+            <>
+              <Headline
+                maxFontSizeMultiplier={FontScaleFactors.xxxLarge}
+                style={styles.directionsText}
+              >
+                Get Directions
+              </Headline>
+              <View style={styles.travelTypesContainer}>
+                <TravelTypeButton
+                  travelKey="walking"
+                  location={location}
+                  result={result}
+                  style={styles.travelTypeButton}
                 />
-              </Marker>
-            </MapView>
-          </Animated.View>
-        )}
-        <View style={styles.overlayContainer}>
-          <View
-            style={styles.overlay}
-            onLayout={(event) => setOverlayLayout(event.nativeEvent.layout)}
-          >
-            <Headline
-              maxFontSizeMultiplier={FontScaleFactors.xxxLarge}
-              style={styles.directionsText}
-            >
-              Get Directions
-            </Headline>
-            <View style={styles.travelTypesContainer}>
-              <TravelTypeButton
-                travelKey="walking"
-                location={location}
-                result={result}
-                style={styles.travelTypeButton}
-              />
-              <TravelTypeButton
-                travelKey="automobile"
-                location={location}
-                result={result}
-                style={styles.travelTypeButton}
-              />
-              <TravelTypeButton
-                travelKey="publicTransportation"
-                location={location}
-                result={result}
-                style={styles.travelTypeButton}
-              />
-            </View>
-          </View>
-        </View>
+                <TravelTypeButton
+                  travelKey="automobile"
+                  location={location}
+                  result={result}
+                  style={styles.travelTypeButton}
+                />
+                <TravelTypeButton
+                  travelKey="publicTransportation"
+                  location={location}
+                  result={result}
+                  style={styles.travelTypeButton}
+                />
+              </View>
+            </>
+          }
+          customMapStyle={[
+            {
+              featureType: "poi",
+              stylers: [{ visibility: "off" }]
+            },
+            {
+              featureType: "transit",
+              stylers: [{ visibility: "off" }]
+            }
+          ]}
+          marker={
+            <AvatarMapMarkerView
+              name={host.name}
+              imageURL={host.profileImageURL ?? undefined}
+            />
+          }
+        />
       </Animated.View>
     </View>
   )

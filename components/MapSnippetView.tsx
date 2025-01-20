@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from "react"
+import React, { useRef, useState, useCallback, Children } from "react"
 import {
   View,
   Dimensions,
@@ -7,7 +7,7 @@ import {
   ViewStyle,
   LayoutRectangle
 } from "react-native"
-import MapView, { Marker, Region } from "react-native-maps"
+import MapView, { MapViewProps, Marker, Region } from "react-native-maps"
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -18,11 +18,14 @@ import { Portal } from "@gorhom/portal"
 import { withTiFDefaultSpring } from "@lib/Reanimated"
 import { TouchableIonicon } from "./common/Icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useScreenBottomPadding } from "./Padding"
 
 export type MapSnippetProps = {
   region: Region
+  overlay?: JSX.Element
+  marker?: JSX.Element
   style?: StyleProp<ViewStyle>
-}
+} & MapViewProps
 
 const SCREEN_WIDTH = Dimensions.get("window").width
 const SCREEN_HEIGHT = Dimensions.get("window").height
@@ -31,9 +34,18 @@ const SCREEN_HEIGHT = Dimensions.get("window").height
  * A snippet of a map with an expand button that
  * transitions to a full-screen map using Reanimated.
  */
-export const MapSnippetView = ({ region, style }: MapSnippetProps) => {
+export const MapSnippetView = ({
+  region,
+  overlay,
+  marker,
+  style,
+  ...mapProps
+}: MapSnippetProps) => {
   const snippetRef = useRef<View>(null)
   const [snippetLayout, setSnippetLayout] = useState<
+    LayoutRectangle | undefined
+  >()
+  const [overlayLayout, setOverlayLayout] = useState<
     LayoutRectangle | undefined
   >()
   const [portalVisible, setPortalVisible] = useState(false)
@@ -58,28 +70,55 @@ export const MapSnippetView = ({ region, style }: MapSnippetProps) => {
       }
     })
   }, [progress, isExpanding])
+  console.log(overlayLayout)
   return (
     <View style={style}>
       <View style={styles.container}>
-        <View ref={snippetRef} style={styles.snippetContainer}>
-          <MapView style={StyleSheet.absoluteFill} initialRegion={region}>
-            <Marker coordinate={region} />
-          </MapView>
+        <View ref={snippetRef} style={styles.mapContainer}>
+          {overlayLayout && (
+            <MapView
+              {...mapProps}
+              style={[{ height: Math.max(300, 200 + overlayLayout.height) }]}
+              loadingEnabled
+              zoomEnabled={false}
+              scrollEnabled={false}
+              mapPadding={{
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: overlayLayout.height + 16
+              }}
+              initialRegion={region}
+            >
+              <Marker coordinate={region}>{marker}</Marker>
+            </MapView>
+          )}
           <TouchableIonicon
             icon={{ name: "contract" }}
             onPress={expand}
             activeOpacity={0.8}
             style={styles.expandButton}
           />
+          <View style={styles.overlayContainer}>
+            <View
+              style={styles.overlay}
+              onLayout={(event) => setOverlayLayout(event.nativeEvent.layout)}
+            >
+              {overlay}
+            </View>
+          </View>
         </View>
-        {snippetLayout && (
+        {snippetLayout && overlayLayout && (
           <PortalView
             isVisible={portalVisible}
             region={region}
             onCollapsed={collapse}
             isExpanding={isExpanding}
             progress={progress}
-            layout={snippetLayout}
+            overlay={overlay}
+            marker={marker}
+            mapLayout={snippetLayout}
+            overlayLayout={overlayLayout}
           />
         )}
       </View>
@@ -87,25 +126,29 @@ export const MapSnippetView = ({ region, style }: MapSnippetProps) => {
   )
 }
 
-type PortalProps = {
+type PortalProps = MapSnippetProps & {
   progress: SharedValue<number>
   isExpanding: SharedValue<boolean>
-  layout: LayoutRectangle
+  mapLayout: LayoutRectangle
+  overlayLayout: LayoutRectangle
   isVisible: boolean
-  region: Region
   onCollapsed: () => void
 }
 
 const PortalView = ({
-  layout,
+  mapLayout,
   isVisible,
   onCollapsed,
   region,
+  overlay,
+  overlayLayout,
+  marker,
   progress,
-  isExpanding
+  isExpanding,
+  ...mapProps
 }: PortalProps) => {
   const animatedMapStyle = useAnimatedStyle(() => {
-    const { x, y, width, height } = layout
+    const { x, y, width, height } = mapLayout
     // NB: This needs to capture progress.value for the expanding animation to work.
     // eslint-disable-next-line no-unused-vars
     const _ = progress.value
@@ -116,15 +159,37 @@ const PortalView = ({
       width: withTiFDefaultSpring(isExpanding.value ? SCREEN_WIDTH : width),
       height: withTiFDefaultSpring(isExpanding.value ? SCREEN_HEIGHT : height)
     }
-  }, [layout])
-  const { top } = useSafeAreaInsets()
+  }, [mapLayout])
+  const { top, bottom } = useSafeAreaInsets()
+  const bottomPadding = useScreenBottomPadding({
+    safeAreaScreens: 8,
+    nonSafeAreaScreens: 24
+  })
   return (
     <Portal>
       {isVisible && (
         <Animated.View style={animatedMapStyle}>
-          <MapView style={StyleSheet.absoluteFill} initialRegion={region}>
-            <Marker coordinate={region} />
+          <MapView
+            {...mapProps}
+            style={StyleSheet.absoluteFill}
+            initialRegion={region}
+            mapPadding={{
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: overlayLayout.height + 16
+            }}
+          >
+            <Marker coordinate={region}>{marker}</Marker>
           </MapView>
+          <View
+            style={[
+              styles.fullscreenOverlayContainer,
+              { bottom: bottom + bottomPadding }
+            ]}
+          >
+            <View style={styles.fullscreenOverlay}>{overlay}</View>
+          </View>
           <TouchableIonicon
             icon={{ name: "contract" }}
             onPress={onCollapsed}
@@ -140,6 +205,11 @@ const PortalView = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1
+  },
+  mapContainer: {
+    position: "relative",
+    borderRadius: 12,
+    overflow: "hidden"
   },
   snippetContainer: {
     height: 150,
@@ -167,5 +237,29 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     alignItems: "center",
     justifyContent: "center"
+  },
+  overlayContainer: {
+    paddingHorizontal: 16
+  },
+  overlay: {
+    position: "absolute",
+    bottom: 16,
+    marginHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: "white",
+    width: "100%",
+    padding: 16
+  },
+  fullscreenOverlayContainer: {
+    position: "absolute",
+    width: "100%",
+    paddingHorizontal: 24,
+    bottom: 0
+  },
+  fullscreenOverlay: {
+    borderRadius: 12,
+    backgroundColor: "white",
+    width: "100%",
+    padding: 16
   }
 })
