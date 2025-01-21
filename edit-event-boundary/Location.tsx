@@ -126,6 +126,7 @@ const LocationView = ({
               }
             ]
           }}
+          expandedMapProps={{ showsUserLocation: true }}
           marker={
             <AvatarMapMarkerView
               name={hostName}

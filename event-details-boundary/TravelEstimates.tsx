@@ -18,7 +18,7 @@ import {
   eventTravelEstimates
 } from "@modules/tif-travel-estimates"
 import { useQuery } from "@tanstack/react-query"
-import { EventAttendee, EventLocation } from "TiFShared/domain-models/Event"
+import { EventLocation } from "TiFShared/domain-models/Event"
 import { LocationCoordinate2D } from "TiFShared/domain-models/LocationCoordinate2D"
 import { dayjs } from "TiFShared/lib/Dayjs"
 import { metersToMiles } from "TiFShared/lib/MetricConversions"
@@ -27,9 +27,7 @@ import { openSettings } from "expo-linking"
 import { LocationAccuracy } from "expo-location"
 import { CodedError } from "expo-modules-core"
 import { ReactNode, useState } from "react"
-import { Pressable } from "react-native"
 import {
-  LayoutRectangle,
   Platform,
   StyleProp,
   StyleSheet,
@@ -37,7 +35,6 @@ import {
   View,
   ViewStyle
 } from "react-native"
-import MapView, { Marker } from "react-native-maps"
 import Animated, { FadeIn } from "react-native-reanimated"
 
 export const EventTravelEstimatesFeature = featureContext({
@@ -250,6 +247,7 @@ export const EventTravelEstimatesView = ({
               }
             ]
           }}
+          expandedMapProps={{ showsUserLocation: true }}
           marker={
             <AvatarMapMarkerView
               name={host.name}
