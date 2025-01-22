@@ -11,7 +11,7 @@ dotenv.config({ path: ".env.infra" })
 const outputChannel = "C01BRGR9SHM"
 
 const action = process.argv[2]
-const checkRunName = "EAS Build"
+const checkRunName = "Wait for Build"
 
 const sendMessageToSlack = (
   /** @type {string} */ message,
@@ -50,35 +50,33 @@ const sendMessageToSlack = (
   })
 }
 
-const sendImageToSlack = async (
-  /** @type {string} */ imageData,
-  /** @type {string} */ message,
-  channelId = outputChannel
-) => {
+const sendImageToSlack = async (imageData, message, channelId = outputChannel) => {
   const imageBuffer = Buffer.from(imageData.split(",")[1], "base64")
 
   try {
-    // Step 1: Get the upload URL
-    const getUploadURLResponse = await fetch("https://slack.com/api/files.getUploadURLExternal", {
-      method: "POST",
+    // Step 1: Get upload URL
+    const params = new URLSearchParams({
+      filename: "qrcode.png",
+      length: `${imageBuffer.length}`
+    })
+
+    const getUploadURLResponse = await fetch(
+      `https://slack.com/api/files.getUploadURLExternal?${params}`, {
+      method: "GET",
       headers: {
-        Authorization: `Bearer ${process.env.SLACK_APP_ID}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        filename: "qrcode.png",
-        length: imageBuffer.length,
-        snippet_type: "png"
-      })
+        Authorization: `Bearer ${process.env.SLACK_APP_ID}`
+      }
     })
 
     const uploadURLData = await getUploadURLResponse.json()
+
+    console.log(uploadURLData)
 
     if (!uploadURLData.ok) {
       throw new Error(`Failed to get upload URL: ${uploadURLData.error}`)
     }
 
-    // Step 2: Upload the file to the provided URL
+    // Step 2: Upload to provided URL
     const uploadResponse = await fetch(uploadURLData.upload_url, {
       method: "PUT",
       headers: {
@@ -91,7 +89,10 @@ const sendImageToSlack = async (
       throw new Error(`Failed to upload file: ${uploadResponse.statusText}`)
     }
 
-    // Step 3: Complete the upload
+    const y = await uploadResponse.json()
+    console.log(y)
+
+    // Step 3: Complete upload
     const completeUploadResponse = await fetch("https://slack.com/api/files.completeUploadExternal", {
       method: "POST",
       headers: {
@@ -101,14 +102,16 @@ const sendImageToSlack = async (
       body: JSON.stringify({
         files: [{
           id: uploadURLData.file_id,
-          title: "QR Code",
-          initial_comment: message,
-          channels: channelId
-        }]
+          title: "QR Code"
+        }],
+        channel_id: channelId,
+        initial_comment: message
       })
     })
 
     const completeUploadData = await completeUploadResponse.json()
+
+    console.log(completeUploadData)
 
     if (!completeUploadData.ok) {
       throw new Error(`Failed to complete upload: ${completeUploadData.error}`)
@@ -124,7 +127,7 @@ const sendImageToSlack = async (
 const getPredictedBuildTime = (timeZone = "America/Los_Angeles") => {
   const now = new Date()
 
-  now.setMinutes(now.getMinutes() + 15)
+  now.setMinutes(now.getMinutes() + 12)
 
   return now.toLocaleString("en-US", {
     timeZone,
@@ -207,13 +210,15 @@ const fetchInstallationAccessToken = async (
 }
 
 const githubJWT = () => {
+  console.log(process.env)
+
   return jwt.sign(
     {
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 5 * 60,
       iss: process.env.BUILD_LISTENER_ID
     },
-    process.env.BUILD_LISTENER_PRIVATE_KEY ?? "",
+    (process.env.BUILD_LISTENER_PRIVATE_KEY ?? "").replace(/\\n/g, "\n"),
     { algorithm: "RS256" }
   )
 }
@@ -248,6 +253,7 @@ const checkGithubActionRuns = async (
     })
 
   console.log("Updated github check run")
+  console.log(resp)
 
   // @ts-ignore
   fs.writeFileSync("checkRunId.txt", resp.id.toString())
@@ -317,7 +323,7 @@ const manageCheckRun = async (/** @type {string} */ action) => {
 
   if (action === "success") {
     const buildqr = await qrcode.toDataURL(buildLink)
-    await sendImageToSlack(buildqr, `${checkRunName} is ready:\n${buildLink}`)
+    await sendImageToSlack(buildqr, `${process.env.GITHUB_BRANCH} is ready:\n${buildLink}`)
   }
   if (action === "failure") {
     await sendMessageToSlack(
@@ -326,7 +332,7 @@ const manageCheckRun = async (/** @type {string} */ action) => {
   }
   if (action === "create") {
     await sendMessageToSlack(
-      `A new development build has started. ${checkRunName} will be finished at approximately *${getPredictedBuildTime()}*. See details at\n${buildLink}\nCommit: ${process.env.GITHUB_SHA}`
+      `A new build is underway for \`${process.env.GITHUB_BRANCH}\`. The build will be finished at approximately *${getPredictedBuildTime()}*. See details at\n${buildLink}\nCommit: ${process.env.GITHUB_SHA}`
     )
   }
 
