@@ -1,11 +1,14 @@
 import { captureAlerts } from "@test-helpers/Alerts"
 import { TestQueryClientProvider } from "@test-helpers/ReactQuery"
 import { act, renderHook, waitFor } from "@testing-library/react-native"
+import { AlphaUserMocks } from "@user/alpha/MockData"
+import { EmailAddress } from "@user/privacy"
 import {
   HELP_AND_SUPPORT_ALERTS,
   HELP_AND_SUPPORT_EMAILS,
   HELP_AND_SUPPORT_EMAIL_ERROR_ALERTS,
   HELP_AND_SUPPORT_EMAIL_SUCCESS_ALERTS,
+  HelpAndSupportFeature,
   useHelpAndSupportSettings
 } from "./HelpAndSupport"
 
@@ -38,7 +41,7 @@ describe("HelpAndSupportSettings tests", () => {
         )
       })
       expect(composeEmail).toHaveBeenCalledWith(
-        HELP_AND_SUPPORT_EMAILS.feedbackSubmitted
+        HELP_AND_SUPPORT_EMAILS.feedbackSubmitted(AlphaUserMocks.TheDarkLord.id)
       )
     })
 
@@ -63,7 +66,10 @@ describe("HelpAndSupportSettings tests", () => {
         )
       )
       expect(composeEmail).toHaveBeenCalledWith(
-        HELP_AND_SUPPORT_EMAILS.bugReported(undefined)
+        HELP_AND_SUPPORT_EMAILS.bugReported(
+          undefined,
+          AlphaUserMocks.TheDarkLord.id
+        )
       )
     })
 
@@ -78,7 +84,10 @@ describe("HelpAndSupportSettings tests", () => {
         )
       )
       expect(composeEmail).toHaveBeenCalledWith(
-        HELP_AND_SUPPORT_EMAILS.bugReported(TEST_COMPILE_LOGS_URI)
+        HELP_AND_SUPPORT_EMAILS.bugReported(
+          TEST_COMPILE_LOGS_URI,
+          AlphaUserMocks.TheDarkLord.id
+        )
       )
     })
 
@@ -99,13 +108,16 @@ describe("HelpAndSupportSettings tests", () => {
         )
       )
       expect(composeEmail).toHaveBeenCalledWith(
-        HELP_AND_SUPPORT_EMAILS.bugReported(undefined)
+        HELP_AND_SUPPORT_EMAILS.bugReported(
+          undefined,
+          AlphaUserMocks.TheDarkLord.id
+        )
       )
     })
 
     test("Successful submit question flow", async () => {
       const result = await renderSuccessfulEmailCompositionFlow()
-      act(() => result.current.questionSubmitted())
+      await waitFor(() => act(() => result.current.questionSubmitted()))
       await waitFor(() =>
         expect(alertPresentationSpy).toHaveBeenPresentedWith(
           HELP_AND_SUPPORT_EMAIL_SUCCESS_ALERTS.submitQuestion
@@ -113,7 +125,7 @@ describe("HelpAndSupportSettings tests", () => {
       )
 
       expect(composeEmail).toHaveBeenCalledWith(
-        HELP_AND_SUPPORT_EMAILS.questionSubmitted
+        HELP_AND_SUPPORT_EMAILS.questionSubmitted(AlphaUserMocks.TheDarkLord.id)
       )
     })
 
@@ -156,13 +168,20 @@ describe("HelpAndSupportSettings tests", () => {
       return renderHook(
         () =>
           useHelpAndSupportSettings({
-            isMailComposerAvailable: isShowingContactSection,
-            compileLogs,
-            composeEmail
+            userSession: {
+              ...AlphaUserMocks.TheDarkLord,
+              primaryContactInfo: EmailAddress.peacock69
+            }
           }),
         {
           wrapper: ({ children }: any) => (
-            <TestQueryClientProvider>{children}</TestQueryClientProvider>
+            <HelpAndSupportFeature.Provider
+              isMailComposerAvailable={isShowingContactSection}
+              compileLogs={compileLogs}
+              composeEmail={composeEmail}
+            >
+              <TestQueryClientProvider>{children}</TestQueryClientProvider>
+            </HelpAndSupportFeature.Provider>
           )
         }
       )

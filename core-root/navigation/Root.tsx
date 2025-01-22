@@ -6,9 +6,10 @@ import {
   createStaticNavigation
 } from "@react-navigation/native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
+import { StyleSheet } from "react-native"
 import { EditEventNavigator } from "./EditEvent"
 import { eventDetailsScreens } from "./EventDetails"
-import { StyleSheet } from "react-native"
+import { helpAndSupportScreens } from "./Feedback"
 
 const HomeScreen = withAlphaRegistration(() => (
   <HomeView style={styles.screen} />
@@ -21,7 +22,8 @@ const Stack = createNativeStackNavigator({
       options: { headerShown: false },
       screen: HomeScreen
     },
-    ...eventDetailsScreens()
+    ...eventDetailsScreens(),
+    ...helpAndSupportScreens()
   },
   groups: {
     modals: {
