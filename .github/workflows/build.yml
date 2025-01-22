@@ -163,4 +163,4 @@ jobs:
           echo "API_URL=${{ secrets.API_ENDPOINT }}" >> .env
 
       - name: Trigger Build on EAS
-        run: eas build --profile development --platform all --non-interactive --no-wait
+        run: npm run eas_build_ci
