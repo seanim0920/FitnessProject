@@ -147,7 +147,7 @@ jobs:
   eas-build:
     needs: [wait-for-review, check_native_changes]
     if: github.actor != 'roswaaltifbot' && !startsWith(github.event.pull_request.title, 'IGNORE_BUILD') && needs.check_native_changes.outputs.native_changes == 'true'
-    name: Perform EAS Build
+    name: Request EAS Build
     runs-on: ubuntu-latest
     env:
       EXPO_PROJECT_ID: ${{ secrets.EXPO_PROJECT_ID }}

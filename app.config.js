@@ -71,7 +71,9 @@ const config = {
       }
     ],
     "expo-secure-store",
-    "expo-asset"
+    "expo-asset",
+    withTiFNativePod,
+    withInjectBundledSoundEffects
   ],
   assetBundlePatterns: ["**/*"],
   ios: {
@@ -121,4 +123,4 @@ const config = {
   }
 }
 
-export default withInjectBundledSoundEffects(withTiFNativePod(config))
+export default config
