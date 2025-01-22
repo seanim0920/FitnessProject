@@ -4,7 +4,7 @@ import { HelpAndSupportView, useHelpAndSupportSettings } from "settings-boundary
 import { UserHandle, UserID } from "TiFShared/domain-models/User"
 
 export const helpAndSupportScreens = () => ({
-  userProfile: {
+  helpAndSupportScreen: {
     options: { headerLeft: XMarkBackButton, headerTitle: "" },
     screen: HelpAndSupportScreen
   }
