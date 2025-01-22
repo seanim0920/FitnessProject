@@ -18,6 +18,41 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  check_native_changes:
+    runs-on: ubuntu-latest
+    outputs:
+      native_changes: ${{ steps.check-files.outputs.native_changes }}
+    steps:
+      - name: Check out the PR branch
+        uses: actions/checkout@v3
+        with:
+          # We need more than the default single commit so we can diff properly.
+          # 'fetch-depth: 0' fetches all history, but can be replaced with '0' or '1' as needed.
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        run: |
+          # This will fetch only the base branch at shallow depth 1 to do a diff
+          git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1
+
+      - name: Check for native file changes
+        id: check-files
+        run: |
+          # Compare the base branch (FETCH_HEAD) to the current HEAD of the PR
+          git diff --name-only FETCH_HEAD HEAD > changed_files.txt
+
+          echo "Changed files:"
+          cat changed_files.txt
+          
+          # Adjust patterns if you have more or fewer native directories
+          if grep -q -E "android/|ios/|expo-plugins/|app.json|eas.json" changed_files.txt; then
+            echo "native_changes=true" >> $GITHUB_OUTPUT
+            echo "Native files were changed"
+          else
+            echo "native_changes=false" >> $GITHUB_OUTPUT
+            echo "No native files were changed"
+          fi
+
   setup_and_lint:
     if: github.actor != 'roswaaltifbot' && !startsWith(github.event.pull_request.title, 'IGNORE_BUILD')
     runs-on: ubuntu-latest
@@ -99,9 +134,9 @@ jobs:
         run: npx expo export --platform ios --platform android
 
   wait-for-review:
-    needs: build
+    needs: [build, check_native_changes]
     runs-on: ubuntu-latest
-    if: github.actor != 'roswaaltifbot' && !startsWith(github.event.pull_request.title, 'IGNORE_BUILD')
+    if: github.actor != 'roswaaltifbot' && !startsWith(github.event.pull_request.title, 'IGNORE_BUILD') && needs.check_native_changes.outputs.native_changes == 'true'
     environment:
       name: eas-build
       url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -110,8 +145,8 @@ jobs:
         run: echo "Waiting for environment review"
 
   eas-build:
-    if: github.actor != 'roswaaltifbot' && !startsWith(github.event.pull_request.title, 'IGNORE_BUILD')
-    needs: wait-for-review
+    needs: [wait-for-review, check_native_changes]
+    if: github.actor != 'roswaaltifbot' && !startsWith(github.event.pull_request.title, 'IGNORE_BUILD') && needs.check_native_changes.outputs.native_changes == 'true'
     name: Perform EAS Build
     runs-on: ubuntu-latest
     env:
@@ -163,4 +198,38 @@ jobs:
           echo "API_URL=${{ secrets.API_ENDPOINT }}" >> .env
 
       - name: Trigger Build on EAS
-        run: npm run eas_build_ci
+        run: eas build --profile development --platform all --non-interactive --no-wait
+        env:
+          EXPO_ACCESS_TOKEN: ${{ secrets.EXPO_ACCESS_TOKEN }}
+
+  # Final job to ensure we pass/fail based on whether EAS build was required (and succeeded)
+  build-status:
+    name: Final Build Status
+    runs-on: ubuntu-latest
+    needs: [check_native_changes, build, eas-build]
+    if: always()
+    steps:
+      - name: Check overall build status
+        env:
+          NATIVE_CHANGES: ${{ needs.check_native_changes.outputs.native_changes }}
+        run: |
+          echo "NATIVE_CHANGES = $NATIVE_CHANGES"
+          
+          # Always require the normal build to be successful.
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            echo "Regular build failed."
+            exit 1
+          fi
+          
+          # If native changes, also require EAS build success.
+          if [ "$NATIVE_CHANGES" == "true" ]; then
+            echo "Native changes detected. Checking EAS build..."
+            if [ "${{ needs.eas-build.result }}" != "success" ]; then
+              echo "EAS build required but not successful."
+              exit 1
+            fi
+            echo "EAS build succeeded."
+          else
+            echo "No native changes, skipping EAS build requirement."
+          fi
+
