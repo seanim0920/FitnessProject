@@ -19,6 +19,7 @@ const TiFPreview = {
 export default TiFPreview
 
 const storage = AlphaUserStorage.ephemeral()
+const storage = AlphaUserStorage.ephemeral()
 const localSettings = PersistentSettingsStores.local(
   new SQLiteLocalSettingsStorage(testSQLite)
 )
