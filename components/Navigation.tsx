@@ -1,12 +1,7 @@
-import {
-  NavigationProp,
-  ParamListBase,
-  useFocusEffect,
-  useNavigation
-} from "@react-navigation/native"
+import { NavigationProp, useNavigation } from "@react-navigation/native"
 import { type NavigationState } from "@react-navigation/routers"
 import { createStackNavigator } from "@react-navigation/stack"
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef } from "react"
 import { StyleProp, StyleSheet, ViewStyle } from "react-native"
 import { TouchableIonicon } from "./common/Icons"
 import { EventID } from "TiFShared/domain-models/Event"
