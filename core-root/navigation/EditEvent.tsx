@@ -36,7 +36,7 @@ const EditEventScreen = withAlphaRegistration(
         onSelectLocationTapped={() => {
           navigation.navigate("modal", { screen: "editEventLocationSearch" })
         }}
-        onSuccess={(e) => pushEventDetails(e.id)}
+        onSuccess={(e) => pushEventDetails(e.id, "replace")}
         style={styles.screen}
       />
     )

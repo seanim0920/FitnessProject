@@ -1,6 +1,9 @@
 import { NavigationProp, useNavigation } from "@react-navigation/native"
 import { type NavigationState } from "@react-navigation/routers"
-import { createStackNavigator } from "@react-navigation/stack"
+import {
+  StackNavigationProp,
+  createStackNavigator
+} from "@react-navigation/stack"
 import React, { useEffect, useRef } from "react"
 import { StyleProp, StyleSheet, ViewStyle } from "react-native"
 import { TouchableIonicon } from "./common/Icons"
@@ -19,12 +22,21 @@ export type StackNavigatorType<
   ParamsList extends Record<string, object | undefined>
 > = ReturnType<typeof createStackNavigator<ParamsList>>
 
+// NB: ReturnType<typeof useNavigation> resolves to unknown, so we'll copy the type from react
+// navigation instead.
+
+export type UseNavigationReturn = Omit<
+  StackNavigationProp<ReactNavigation.RootParamList>,
+  "getState"
+> & {
+  getState(): NavigationState | undefined
+}
+
 /**
  * Returns an object of functions to navigate to essential app screens.
  */
 export const useCoreNavigation = () => {
-  // TODO: - Actually Navigate
-  const navigation = useNavigation()
+  const navigation = useNavigation<UseNavigationReturn>()
   return {
     presentEditEvent: (edit: EditEventFormValues, id?: EventID) => {
       const formValues = toRouteableEditFormValues(edit)
@@ -43,8 +55,15 @@ export const useCoreNavigation = () => {
     presentProfile: (id: UserID | UserHandle) => {
       navigation.navigate("modal", { screen: "userProfile", params: { id } })
     },
-    pushEventDetails: (id: EventID) => {
-      navigation.navigate("eventDetails", { id })
+    pushEventDetails: (
+      id: EventID,
+      method: "replace" | "navigate" = "navigate"
+    ) => {
+      if (method === "replace") {
+        navigation.replace("eventDetails", { id })
+      } else {
+        navigation.navigate("eventDetails", { id })
+      }
     },
     pushAttendeesList: (id: EventID) => {
       navigation.navigate("eventAttendeesList", { id })
@@ -67,16 +86,6 @@ export const BASE_HEADER_SCREEN_OPTIONS = {
   }
 }
 
-// NB: ReturnType<typeof useNavigation> resolves to unknown, so we'll copy the type from react
-// navigation instead.
-
-export type UseNavigationReturn = Omit<
-  NavigationProp<ReactNavigation.RootParamList>,
-  "getState"
-> & {
-  getState(): NavigationState | undefined
-}
-
 export type BackButtonProps = NativeStackHeaderLeftProps & {
   navigation?: UseNavigationReturn
   style?: StyleProp<ViewStyle>
@@ -95,7 +104,7 @@ export type BackButtonProps = NativeStackHeaderLeftProps & {
 export const useBackButton = (
   Button?: (props: BackButtonProps) => JSX.Element
 ) => {
-  const navigation = useNavigation()
+  const navigation = useNavigation<UseNavigationReturn>()
   const DefaultButton = useDefaultBackButtonView()
   const HeaderButton = Button ?? DefaultButton
   useEffect(() => {
