@@ -1,8 +1,10 @@
-import { BUILD_TYPE } from "@env"
+import { API_URL, BUILD_TYPE } from "@env"
 import { registerRootComponent } from "expo"
 import "TiFShared"
 
 if (BUILD_TYPE === "storybook") {
+console.log(API_URL)
+console.log(BUILD_TYPE)
   // @ts-ignore App entry
   const Module = require("./.storybook/App")
   registerRootComponent(Module.default)

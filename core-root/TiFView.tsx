@@ -7,6 +7,7 @@ import { TiFQueryClientProvider } from "@lib/ReactQuery"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { TiFBottomSheetProvider } from "@components/BottomSheet"
 import { RootNavigation } from "./navigation/Root"
+import { PortalProvider } from "@gorhom/portal"
 
 export type TiFProps = {
   isFontsLoaded: boolean
@@ -20,19 +21,21 @@ export const TiFView = ({ isFontsLoaded, style, ...props }: TiFProps) => {
   if (!isFontsLoaded) return null
   return (
     <GestureHandlerRootView>
-      <TiFQueryClientProvider>
-        <SafeAreaProvider>
-          <RootSiblingParent>
-            <TiFBottomSheetProvider>
-              <View style={style}>
-                <TiFContext.Provider value={props}>
-                  <RootNavigation />
-                </TiFContext.Provider>
-              </View>
-            </TiFBottomSheetProvider>
-          </RootSiblingParent>
-        </SafeAreaProvider>
-      </TiFQueryClientProvider>
+      <PortalProvider>
+        <TiFQueryClientProvider>
+          <SafeAreaProvider>
+            <RootSiblingParent>
+              <TiFBottomSheetProvider>
+                <View style={style}>
+                  <TiFContext.Provider value={props}>
+                    <RootNavigation />
+                  </TiFContext.Provider>
+                </View>
+              </TiFBottomSheetProvider>
+            </RootSiblingParent>
+          </SafeAreaProvider>
+        </TiFQueryClientProvider>
+      </PortalProvider>
     </GestureHandlerRootView>
   )
 }
