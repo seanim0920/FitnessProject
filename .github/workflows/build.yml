@@ -196,8 +196,21 @@ jobs:
           echo "MIXPANEL_TOKEN=${{ secrets.MIXPANEL_TOKEN }}" >> .env
           echo "API_URL=${{ secrets.API_ENDPOINT }}" >> .env
 
-      - name: Trigger Build on EAS
-        run: npm run eas_build_ci
+      - name: Add ios platform to .env
+        run: |
+          echo "PLATFORM=IOS" >> .env.infra
+
+      - name: Trigger iOS Build on EAS
+        run: npm run eas_build_ci_ios
+        env:
+          EXPO_ACCESS_TOKEN: ${{ secrets.EXPO_ACCESS_TOKEN }}
+      
+      - name: Add android platform to .env
+        run: |
+          echo "PLATFORM=ANDROID" >> .env.infra
+          
+      - name: Trigger Android Build on EAS
+        run: npm run eas_build_ci_android
         env:
           EXPO_ACCESS_TOKEN: ${{ secrets.EXPO_ACCESS_TOKEN }}
 
