@@ -1,7 +1,4 @@
-import {
-  BASE_HEADER_SCREEN_OPTIONS,
-  useCoreNavigation
-} from "@components/Navigation"
+import { useCoreNavigation } from "@components/Navigation"
 import {
   withAlphaRegistration,
   WithAlphaRegistrationProps
@@ -18,12 +15,9 @@ import {
   useLocationsSearch
 } from "@location-search-boundary"
 import { StaticScreenProps, useNavigation } from "@react-navigation/native"
-import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import { EventID } from "TiFShared/domain-models/Event"
 import { useSetAtom } from "jotai"
 import { StyleSheet } from "react-native"
-import { eventDetailsScreens } from "./EventDetails"
-import { profileScreens } from "./Profile"
 
 type EditEventScreenProps = WithAlphaRegistrationProps<
   StaticScreenProps<RouteableEditEventFormValues & { id?: EventID }>
@@ -40,11 +34,9 @@ const EditEventScreen = withAlphaRegistration(
         hostName={session.name}
         hostProfileImageURL={session.profileImageURL}
         onSelectLocationTapped={() => {
-          navigation.navigate("editEvent", {
-            screen: "editEventLocationSearch"
-          })
+          navigation.navigate("modal", { screen: "editEventLocationSearch" })
         }}
-        onSuccess={(e) => pushEventDetails(e.id, "replace")}
+        onSuccess={(e) => pushEventDetails(e.id)}
         style={styles.screen}
       />
     )
@@ -73,29 +65,24 @@ const EditEventFormBackButton = () => (
   <EditEventFormDismissButton onDismiss={useNavigation().goBack} />
 )
 
-export const EditEventNavigator = createNativeStackNavigator({
-  screenOptions: () => BASE_HEADER_SCREEN_OPTIONS,
-  screens: {
-    editEventForm: {
-      options: {
-        headerTitle: "Edit Event",
-        headerLeft: EditEventFormBackButton
-      },
-      screen: EditEventScreen
+export const editEventScreens = () => ({
+  editEventForm: {
+    options: {
+      headerTitle: "Edit Event",
+      headerLeft: EditEventFormBackButton
     },
-    createEventForm: {
-      options: {
-        headerTitle: "Create Event",
-        headerLeft: EditEventFormBackButton
-      },
-      screen: EditEventScreen
+    screen: EditEventScreen
+  },
+  createEventForm: {
+    options: {
+      headerTitle: "Create Event",
+      headerLeft: EditEventFormBackButton
     },
-    editEventLocationSearch: {
-      options: { headerShown: false },
-      screen: LocationSearchScreen
-    },
-    ...eventDetailsScreens(),
-    ...profileScreens()
+    screen: EditEventScreen
+  },
+  editEventLocationSearch: {
+    options: { headerShown: false },
+    screen: LocationSearchScreen
   }
 })
 
