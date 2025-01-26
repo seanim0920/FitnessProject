@@ -1,4 +1,4 @@
-name: Project Setup
+name: Project Build
 
 env:
   TEST_RUNNER_CI: 1
@@ -7,68 +7,88 @@ env:
 on:
   pull_request:
     types: [opened, synchronize]
-    branches:
-      - master
-      - development
+    branches: [master, development]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  check_native_changes:
+  check_platform_changes:
     runs-on: ubuntu-latest
     outputs:
-      native_changes: ${{ steps.check-files.outputs.native_changes }}
+      ios_changes: ${{ steps.check-files.outputs.ios_changes }}
+      android_changes: ${{ steps.check-files.outputs.android_changes }}
     steps:
-      - name: Check out the PR branch
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
         with:
-          # We need more than the default single commit so we can diff properly.
-          # 'fetch-depth: 0' fetches all history, but can be replaced with '0' or '1' as needed.
           fetch-depth: 0
 
       - name: Fetch base branch
-        run: |
-          # This will fetch only the base branch at shallow depth 1 to do a diff
-          git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1
+        run: git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1
 
-      - name: Check for native file changes
+      - name: Check for platform-specific changes
         id: check-files
         run: |
-          # Compare the base branch (FETCH_HEAD) to the current HEAD of the PR
           git diff --name-only FETCH_HEAD HEAD > changed_files.txt
-
-          echo "Changed files:"
-          cat changed_files.txt
           
-          # Adjust patterns if you have more or fewer native directories
-          if grep -q -E "android/|ios/|expo-plugins/|app.json|eas.json" changed_files.txt; then
-            echo "native_changes=true" >> $GITHUB_OUTPUT
-            echo "Native files were changed"
+          # iOS native file patterns
+          if grep -q -E "\.(swift|m|h|mm|plist|xcodeproj|xcworkspace|pbxproj)$|ios/Podfile|ios/Podfile.lock" changed_files.txt; then
+            echo "ios_changes=true" >> $GITHUB_OUTPUT
           else
-            echo "native_changes=false" >> $GITHUB_OUTPUT
-            echo "No native files were changed"
+            echo "ios_changes=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Android native file patterns
+          if grep -q -E "\.(kotlin|kt|java|gradle|xml|aar)$|android/gradle|android/build.gradle|android/settings.gradle" changed_files.txt; then
+            echo "android_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "android_changes=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Check package.json for native dependencies
+          if git diff FETCH_HEAD HEAD -- package.json | grep -q "dependencies\|devDependencies"; then
+            echo "Checking package.json changes..."
+            git show FETCH_HEAD:package.json > old_package.json
+            git show HEAD:package.json > new_package.json
+            
+            if ! command -v jq &> /dev/null; then
+              sudo apt-get update && sudo apt-get install -y jq
+            fi
+            
+            function check_native_deps() {
+              local old_deps=$(jq -r "$1" old_package.json)
+              local new_deps=$(jq -r "$1" new_package.json)
+              
+              if [ "$old_deps" != "$new_deps" ]; then
+                local native_patterns="react-native-|@react-native|expo-|@expo"
+                if echo "$new_deps" | grep -q "$native_patterns"; then
+                  return 0
+                fi
+              fi
+              return 1
+            }
+            
+            if check_native_deps '.dependencies' || check_native_deps '.devDependencies'; then
+              echo "ios_changes=true" >> $GITHUB_OUTPUT
+              echo "android_changes=true" >> $GITHUB_OUTPUT
+            fi
+            
+            rm old_package.json new_package.json
           fi
 
   setup_and_lint:
     if: github.actor != 'roswaaltifbot' && !startsWith(github.event.pull_request.title, 'IGNORE_BUILD')
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Cache node modules
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
-
-      - name: Setup Node.js
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js and Cache
         uses: actions/setup-node@v3
         with:
-          node-version: "20.0.0"
-
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
       - name: Install Dependencies
         run: |
           if [ ! -d "node_modules" ]; then
@@ -84,8 +104,8 @@ jobs:
         run: npm run staged-lint
 
   unit_tests:
-    if: github.actor != 'roswaaltifbot' && !startsWith(github.event.pull_request.title, 'IGNORE_BUILD')
     needs: setup_and_lint
+    if: github.actor != 'roswaaltifbot' && !startsWith(github.event.pull_request.title, 'IGNORE_BUILD')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -103,15 +123,15 @@ jobs:
         with:
           node-version: "20.0.0"
 
-      - name: Add Env
+      - name: Setup Environment
         run: echo "API_URL=${{ secrets.API_ENDPOINT }}" >> .env
 
-      - name: Run tests
+      - name: Run Tests
         run: npm run test:ci
 
   build:
-    if: github.actor != 'roswaaltifbot' && !startsWith(github.event.pull_request.title, 'IGNORE_BUILD')
     needs: unit_tests
+    if: github.actor != 'roswaaltifbot' && !startsWith(github.event.pull_request.title, 'IGNORE_BUILD')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -128,44 +148,99 @@ jobs:
         with:
           node-version: "20.0.0"
 
-      - name: Bundle project
+      - name: Bundle Project
         run: npx expo export --platform ios --platform android
 
-  wait-for-review:
-    needs: [check_native_changes]
+  wait_for_review:
+    needs: [check_platform_changes]
+    if: |
+      github.actor != 'roswaaltifbot' && 
+      !startsWith(github.event.pull_request.title, 'IGNORE_BUILD') && 
+      (needs.check_platform_changes.outputs.ios_changes == 'true' || needs.check_platform_changes.outputs.android_changes == 'true')
     runs-on: ubuntu-latest
-    if: github.actor != 'roswaaltifbot' && !startsWith(github.event.pull_request.title, 'IGNORE_BUILD') && needs.check_native_changes.outputs.native_changes == 'true'
     environment:
       name: eas-build
       url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
     steps:
-      - name: Waiting for review
-        run: echo "Waiting for environment review"
+      - run: echo "Waiting for environment review"
 
-  eas-build:
-    needs: [build, wait-for-review, check_native_changes]
-    if: github.actor != 'roswaaltifbot' && !startsWith(github.event.pull_request.title, 'IGNORE_BUILD') && needs.check_native_changes.outputs.native_changes == 'true'
-    name: Request EAS Build
+  create_build_checkruns:
+    needs: [build, check_platform_changes, wait_for_review]
+    if: github.actor != 'roswaaltifbot' && !startsWith(github.event.pull_request.title, 'IGNORE_BUILD')
+    runs-on: ubuntu-latest
+    outputs:
+      ios_checkrun_id: ${{ steps.ios-checkrun.outputs.checkrun_id }}
+      android_checkrun_id: ${{ steps.android-checkrun.outputs.checkrun_id }}
+    steps:
+      - name: Create iOS Check Run
+        id: ios-checkrun
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const iosChanges = '${{ needs.check_platform_changes.outputs.ios_changes }}' === 'true';
+            const checkRun = await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Wait for IOS Build',
+              head_sha: context.payload.pull_request.head.sha,
+              status: iosChanges ? 'queued' : 'completed',
+              started_at: new Date().toISOString(),
+              check_suite: {
+                workflow_id: context.workflow,
+                name: 'Project Build'
+              },
+              ...(iosChanges ? {} : { completed_at: new Date().toISOString(), conclusion: 'success' }),
+              output: {
+                title: iosChanges ? 'Requesting an IOS Build' : 'No iOS Changes Detected',
+                summary: iosChanges ? 'Requesting a new IOS build.' : 'No native iOS changes were detected in this PR'
+              }
+            });
+            core.setOutput('checkrun_id', checkRun.data.id);
+
+      - name: Create Android Check Run
+        id: android-checkrun
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const androidChanges = '${{ needs.check_platform_changes.outputs.android_changes }}' === 'true';
+            const checkRun = await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Wait for ANDROID Build',
+              head_sha: context.payload.pull_request.head.sha,
+              status: androidChanges ? 'queued' : 'completed',
+              started_at: new Date().toISOString(),
+              check_suite: {
+                workflow_id: context.workflow,
+                name: 'Project Build'
+              },
+              ...(androidChanges ? {} : { completed_at: new Date().toISOString(), conclusion: 'success' }),
+              output: {
+                title: androidChanges ? 'Requesting an ANDROID Build' : 'No Android Changes Detected',
+                summary: androidChanges ? 'Requesting a new ANDROID build.' : 'No native Android changes were detected in this PR'
+              }
+            });
+            core.setOutput('checkrun_id', checkRun.data.id);
+
+  eas_build:
+    needs: [create_build_checkruns, check_platform_changes]
+    if: |
+      github.actor != 'roswaaltifbot' && 
+      !startsWith(github.event.pull_request.title, 'IGNORE_BUILD') &&
+      (needs.check_platform_changes.outputs.ios_changes == 'true' || needs.check_platform_changes.outputs.android_changes == 'true')
+    name: Request EAS Builds
     runs-on: ubuntu-latest
     env:
       EXPO_PROJECT_ID: ${{ secrets.EXPO_PROJECT_ID }}
       EXPO_PROJECT_OWNER: ${{ secrets.EXPO_PROJECT_OWNER }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Cache node modules
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
-
-      - name: Setup Node.js
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js and Cache
         uses: actions/setup-node@v3
         with:
-          node-version: "20.0.0"
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
       - name: Install Dependencies
         run: |
@@ -176,71 +251,42 @@ jobs:
             echo "Cache restored, skipping npm ci."
           fi
 
-      - name: Setup Expo and EAS
+      - name: Setup Expo
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_ACCESS_TOKEN }}
 
-      - name: Construct .env
+      - name: Setup Base Environment
         run: |
-          echo "MAPS_API_KEY=${{ secrets.MAPS_API_KEY }}" >> .env.infra
-          echo "CHECK_RUN_ID=${{ github.run_id }}" >> .env.infra
-          echo "GITHUB_SHA=${{ github.event.pull_request.head.sha }}" >> .env.infra
-          echo "GITHUB_BRANCH=${{ github.event.pull_request.head.ref }}" >> .env.infra
-          echo "GITHUB_REPOSITORY=${{ github.repository }}" >> .env.infra
-          echo "RUN_EAS_BUILD_HOOKS=1" >> .env.infra
-          echo "EXPO_PROJECT_ID=${{ secrets.EXPO_PROJECT_ID }}" >> .env.infra
-          echo "EXPO_PROJECT_OWNER=${{ secrets.EXPO_PROJECT_OWNER }}" >> .env.infra
-          echo "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> .env
-          echo "MIXPANEL_TOKEN=${{ secrets.MIXPANEL_TOKEN }}" >> .env
-          echo "API_URL=${{ secrets.API_ENDPOINT }}" >> .env
+          {
+            echo "GITHUB_SHA=${{ github.event.pull_request.head.sha }}"
+            echo "GITHUB_BRANCH=${{ github.event.pull_request.head.ref }}"
+            echo "GITHUB_REPOSITORY=${{ github.repository }}"
+            echo "RUN_EAS_BUILD_HOOKS=1"
+            echo "EXPO_PROJECT_ID=${{ secrets.EXPO_PROJECT_ID }}"
+            echo "EXPO_PROJECT_OWNER=${{ secrets.EXPO_PROJECT_OWNER }}"
+            echo "MAPS_API_KEY=${{ secrets.MAPS_API_KEY }}"
+          } >> .env.infra
 
-      - name: Add ios platform to .env
+      - name: Request iOS Build
+        if: needs.check_platform_changes.outputs.ios_changes == 'true'
         run: |
-          echo "PLATFORM=IOS" >> .env.infra
-
-      - name: Trigger iOS Build on EAS
-        run: npm run eas_build_ci_ios
-        env:
-          EXPO_ACCESS_TOKEN: ${{ secrets.EXPO_ACCESS_TOKEN }}
-      
-      - name: Add android platform to .env
-        run: |
-          echo "PLATFORM=ANDROID" >> .env.infra
-          
-      - name: Trigger Android Build on EAS
-        run: npm run eas_build_ci_android
+          {
+            echo "PLATFORM=IOS"
+            echo "CHECK_RUN_ID=${{ needs.create_build_checkruns.outputs.ios_checkrun_id }}"
+          } >> .env.infra
+          npm run eas_build_ci_ios
         env:
           EXPO_ACCESS_TOKEN: ${{ secrets.EXPO_ACCESS_TOKEN }}
 
-  build-status:
-    name: Build Status
-    runs-on: ubuntu-latest
-    needs: [check_native_changes, build, eas-build]
-    if: always()
-    steps:
-      - name: Check overall build status
-        env:
-          NATIVE_CHANGES: ${{ needs.check_native_changes.outputs.native_changes }}
+      - name: Request Android Build
+        if: needs.check_platform_changes.outputs.android_changes == 'true'
         run: |
-          echo "NATIVE_CHANGES = $NATIVE_CHANGES"
-          
-          # Always require the normal build to be successful.
-          if [ "${{ needs.build.result }}" != "success" ]; then
-            echo "Regular build failed."
-            exit 1
-          fi
-          
-          # If native changes, also require EAS build success.
-          if [ "$NATIVE_CHANGES" == "true" ]; then
-            echo "Native changes detected. Checking EAS build..."
-            if [ "${{ needs.eas-build.result }}" != "success" ]; then
-              echo "EAS build required but not successful."
-              exit 1
-            fi
-            echo "EAS build succeeded."
-          else
-            echo "No native changes, skipping EAS build requirement."
-          fi
-
+          {
+            echo "PLATFORM=ANDROID"
+            echo "CHECK_RUN_ID=${{ needs.create_build_checkruns.outputs.android_checkrun_id }}"
+          } >> .env.infra
+          npm run eas_build_ci_android
+        env:
+          EXPO_ACCESS_TOKEN: ${{ secrets.EXPO_ACCESS_TOKEN }}
