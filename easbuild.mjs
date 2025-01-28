@@ -10,7 +10,7 @@ dotenv.config({ path: ".env.infra" })
 const outputChannel = "C01BRGR9SHM"
 
 const action = process.argv[2]
-const checkRunName = `Wait for ${process.env.PLATFORM} Build`
+const checkRunName = process.env.CHECK_RUN_NAME
 
 const sendMessageToSlack = (
   /** @type {string} */ message,
@@ -320,5 +320,6 @@ const manageCheckRun = async (/** @type {string} */ action) => {
 }
 
 if (process.env.RUN_EAS_BUILD_HOOKS === "1") {
+  console.log(process.env)
   manageCheckRun(action)
 }

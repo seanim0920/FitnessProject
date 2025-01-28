@@ -107,7 +107,7 @@ jobs:
     needs: setup_and_lint
     if: github.actor != 'roswaaltifbot' && !startsWith(github.event.pull_request.title, 'IGNORE_BUILD')
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -122,6 +122,17 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "20.0.0"
+          
+      - name: Install Dependencies
+        run: |
+          if [ ! -d "node_modules" ]; then
+            echo "Cache not found, running npm ci."
+            npm ci
+          else
+            echo "Cache restored, skipping npm ci."
+          fi
+        env:
+          TIFSHARED_JS: true
 
       - name: Setup Environment
         run: echo "API_URL=${{ secrets.API_ENDPOINT }}" >> .env
@@ -181,14 +192,10 @@ jobs:
             const checkRun = await github.rest.checks.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              name: 'Wait for IOS Build',
+              name: 'Wait for iOS Build',
               head_sha: context.payload.pull_request.head.sha,
               status: iosChanges ? 'queued' : 'completed',
               started_at: new Date().toISOString(),
-              check_suite: {
-                workflow_id: context.workflow,
-                name: 'Project Build'
-              },
               ...(iosChanges ? {} : { completed_at: new Date().toISOString(), conclusion: 'success' }),
               output: {
                 title: iosChanges ? 'Requesting an IOS Build' : 'No iOS Changes Detected',
@@ -206,14 +213,10 @@ jobs:
             const checkRun = await github.rest.checks.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              name: 'Wait for ANDROID Build',
+              name: 'Wait for Android Build',
               head_sha: context.payload.pull_request.head.sha,
               status: androidChanges ? 'queued' : 'completed',
               started_at: new Date().toISOString(),
-              check_suite: {
-                workflow_id: context.workflow,
-                name: 'Project Build'
-              },
               ...(androidChanges ? {} : { completed_at: new Date().toISOString(), conclusion: 'success' }),
               output: {
                 title: androidChanges ? 'Requesting an ANDROID Build' : 'No Android Changes Detected',
@@ -273,6 +276,7 @@ jobs:
         if: needs.check_platform_changes.outputs.ios_changes == 'true'
         run: |
           {
+            echo "CHECK_RUN_NAME=Wait for iOS Build"
             echo "PLATFORM=IOS"
             echo "CHECK_RUN_ID=${{ needs.create_build_checkruns.outputs.ios_checkrun_id }}"
           } >> .env.infra
@@ -284,6 +288,7 @@ jobs:
         if: needs.check_platform_changes.outputs.android_changes == 'true'
         run: |
           {
+            echo "CHECK_RUN_NAME=Wait for Android Build"
             echo "PLATFORM=ANDROID"
             echo "CHECK_RUN_ID=${{ needs.create_build_checkruns.outputs.android_checkrun_id }}"
           } >> .env.infra
