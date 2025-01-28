@@ -16,9 +16,7 @@ in your EAS Build environment variables or .env before building.
   return key
 }
 
-(() => {
-  const key = ensureMapsApiKey()
-  const secretsFilePath = join(__dirname, "..", "android", "secrets.properties")
-  writeFileSync(secretsFilePath, `MAPS_API_KEY=${key}\n`, "utf8")
-  console.log(`✅ Wrote secrets.properties with MAPS_API_KEY to: ${secretsFilePath}`)
-})()
+const key = ensureMapsApiKey()
+const secretsFilePath = join(__dirname, "..", "android", "secrets.properties")
+writeFileSync(secretsFilePath, `MAPS_API_KEY=${key}\n`, "utf8")
+console.log(`✅ Wrote secrets.properties with MAPS_API_KEY to: ${secretsFilePath}`)

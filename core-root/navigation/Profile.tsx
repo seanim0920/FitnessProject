@@ -1,4 +1,4 @@
-import { XMarkBackButton } from "@components/Navigation"
+import { useBackButton } from "@components/Navigation"
 import { StaticScreenProps } from "@react-navigation/native"
 import { UserHandle, UserID } from "TiFShared/domain-models/User"
 import {
@@ -9,7 +9,7 @@ import {
 
 export const profileScreens = () => ({
   userProfile: {
-    options: { headerLeft: XMarkBackButton, headerTitle: "" },
+    options: { headerTitle: "" },
     screen: ProfileScreen
   }
 })
@@ -19,11 +19,10 @@ type ProfileScreenProps = StaticScreenProps<{
 }>
 
 const ProfileScreen = ({ route }: ProfileScreenProps) => {
+  useBackButton()
   return (
     <UserProfileView
-      userInfoState={useUserProfile({
-        userId: route.params.id.toString()
-      })}
+      userInfoState={useUserProfile({ userId: route.params.id.toString() })}
       upcomingEventsState={useUpcomingEvents({
         userId: route.params.id.toString()
       })}

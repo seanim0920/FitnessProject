@@ -55,49 +55,50 @@ jobs:
       - name: Check for platform-specific changes
         id: check-files
         run: |
-          git diff --name-only FETCH_HEAD HEAD > changed_files.txt
-          
-          # Initialize change flags
           ios_changed=false
           android_changed=false
           
-          # iOS native file patterns in project
-          if grep -q -E "\.(swift|m|h|mm|plist|xcodeproj|xcworkspace|pbxproj)$|ios/Podfile|ios/Podfile.lock" changed_files.txt; then
+          git diff --name-only FETCH_HEAD HEAD > changed_files.txt
+          
+          if grep -q -E "\.(swift|m|h|c|mm|plist|xcodeproj|xcworkspace|pbxproj)$|ios/Podfile|ios/Podfile.lock" changed_files.txt; then
             ios_changed=true
           fi
           
-          # Android native file patterns in project
           if grep -q -E "\.(kotlin|kt|java|gradle|xml|aar)$|android/gradle|android/build.gradle|android/settings.gradle" changed_files.txt; then
             android_changed=true
           fi
           
-          # Install dependencies if package.json changed
           if git diff FETCH_HEAD HEAD -- package.json | grep -q "dependencies\|devDependencies"; then
-            echo "Checking package.json changes..."
+            echo "Detected package.json dependency changes..."
             
-            # Install dependencies for both versions to compare
-            git show FETCH_HEAD:package.json > old_package.json
-            git show HEAD:package.json > new_package.json
+            TEMP_DIR=$(mktemp -d)
+            OLD_DIR="$TEMP_DIR/old"
+            NEW_DIR="$TEMP_DIR/new"
+            mkdir -p "$OLD_DIR" "$NEW_DIR"
             
-            # Create temporary directories for both versions
-            mkdir -p old_deps new_deps
+            git show FETCH_HEAD:package.json > "$OLD_DIR/package.json"
+            git show HEAD:package.json > "$NEW_DIR/package.json"
             
-            # Install old dependencies
-            cd old_deps
-            cp ../old_package.json package.json
-            npm install --production --ignore-scripts
-            cd ..
-            
-            # Install new dependencies
-            cd new_deps
-            cp ../new_package.json package.json
-            npm install --production --ignore-scripts
-            cd ..
-            
-            # Function to check for native code in node_modules
-            function check_native_code() {
+            install_deps() {
               local dir=$1
-              # Check for native files recursively
+              cd "$dir"
+              if ! npm install --production --ignore-scripts > npm_output.log 2>&1; then
+                echo "Warning: npm install failed in $dir"
+                cat npm_output.log
+                return 1
+              fi
+              cd - > /dev/null
+            }
+            
+            check_ios_code() {
+              local dir=$1
+              echo "Checking for iOS native code in: $dir"
+              
+              if [ ! -d "$dir/node_modules" ]; then
+                echo "Warning: no node_modules directory found in $dir"
+                return 1
+              fi
+              
               if find "$dir/node_modules" -type f \( \
                 -name "*.swift" -o \
                 -name "*.m" -o \
@@ -107,41 +108,84 @@ jobs:
                 -name "*.xcodeproj" -o \
                 -name "*.xcworkspace" -o \
                 -name "*.plist" -o \
-                -name "Podfile" -o \
+                -name "Podfile" \
+              \) 2>/dev/null | grep -q .; then
+                echo "Found iOS native code files"
+                return 0
+              fi
+              
+              echo "No iOS native code files found"
+              return 1
+            }
+          
+            check_android_code() {
+              local dir=$1
+              echo "Checking for Android native code in: $dir"
+              
+              if [ ! -d "$dir/node_modules" ]; then
+                echo "Warning: no node_modules directory found in $dir"
+                return 1
+              fi
+              
+              if find "$dir/node_modules" -type f \( \
                 -name "*.gradle" -o \
                 -name "*.java" -o \
                 -name "*.kt" -o \
-                -name "*.aar" \
+                -name "*.aar" -o \
+                -name "*.cpp" -o \
+                -name "*.cc" -o \
+                -name "*.c" -o \
+                -name "*.hpp" -o \
+                -name "*.hh" \
               \) 2>/dev/null | grep -q .; then
+                echo "Found Android native code files"
                 return 0
               fi
               
-              # Check package.json files for native dependencies
-              if find "$dir/node_modules" -name "package.json" -type f -exec grep -l "react-native\|@react-native\|expo-\|@expo" {} \; | grep -q .; then
-                return 0
-              fi
-              
+              echo "No Android native code files found"
               return 1
             }
             
-            # Compare dependencies
-            if [ -d "old_deps/node_modules" ] && [ -d "new_deps/node_modules" ]; then
-              old_native=$(check_native_code "old_deps")
-              new_native=$(check_native_code "new_deps")
+            echo "Installing old dependencies..."
+            install_deps "$OLD_DIR"
+            echo "Installing new dependencies..."
+            install_deps "$NEW_DIR"
+            
+            if [ -d "$OLD_DIR/node_modules" ] && [ -d "$NEW_DIR/node_modules" ]; then
+              echo "Checking for native code changes..."
               
-              if [ "$old_native" != "$new_native" ] || check_native_code "new_deps"; then
+              old_has_ios=$(check_ios_code "$OLD_DIR")
+              new_has_ios=$(check_ios_code "$NEW_DIR")
+              
+              if [ "$old_has_ios" != "$new_has_ios" ] || [ "$new_has_ios" -eq 0 ]; then
+                echo "Detected iOS native code changes in dependencies"
                 ios_changed=true
+              fi
+          
+              old_has_android=$(check_android_code "$OLD_DIR")
+              new_has_android=$(check_android_code "$NEW_DIR")
+              
+              if [ "$old_has_android" != "$new_has_android" ] || [ "$new_has_android" -eq 0 ]; then
+                echo "Detected Android native code changes in dependencies"
                 android_changed=true
               fi
+            else
+              echo "Warning: Could not properly compare dependencies"
             fi
             
-            # Cleanup
-            rm -rf old_deps new_deps old_package.json new_package.json
+            echo "Cleaning up temporary files..."
+            rm -rf "$TEMP_DIR"
+          else
+            echo "No dependency changes detected in package.json"
           fi
           
-          # Set outputs
-          echo "ios_changes=$ios_changed" >> $GITHUB_OUTPUT
-          echo "android_changes=$android_changed" >> $GITHUB_OUTPUT
+          echo "ios_changes=$ios_changed" >> "$GITHUB_OUTPUT"
+          echo "android_changes=$android_changed" >> "$GITHUB_OUTPUT"
+          
+          echo "Completed dependency check"
+          echo "iOS changes: $ios_changed"
+          echo "Android changes: $android_changed"
+
 
   setup_and_lint:
     if: github.actor != 'roswaaltifbot' && !startsWith(github.event.pull_request.title, 'IGNORE_BUILD')
