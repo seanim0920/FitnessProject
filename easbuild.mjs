@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import dotenv from "dotenv"
+import fs from "fs"
 import https from "https"
 import jwt from "jsonwebtoken"
 import fetch from "node-fetch"
@@ -49,7 +50,7 @@ const sendMessageToSlack = (
   })
 }
 
-const sendImageToSlack = async (/** @type {string} */ imageData, /** @type {string} */ message, channelId = outputChannel) => {
+const sendImageToSlack = async (imageData, message, channelId = outputChannel) => {
   const imageBuffer = Buffer.from(imageData.split(",")[1], "base64")
 
   try {
@@ -204,6 +205,8 @@ const fetchInstallationAccessToken = async (
 }
 
 const githubJWT = () => {
+  console.log(process.env)
+
   return jwt.sign(
     {
       iat: Math.floor(Date.now() / 1000),
@@ -216,7 +219,7 @@ const githubJWT = () => {
 }
 
 const checkGithubActionRuns = async (
-  /** @type {{ output: { title: string; summary: string; text?: undefined; }; checkRunId?: undefined; name?: undefined; status?: undefined; } | { output: { title: string; summary: string; text: string; }; checkRunId?: undefined; name?: undefined; status?: undefined; } | { checkRunId: string | undefined; name: string; status: string; output: { title: string; summary: string; text?: undefined; }; }} */ checkRunData,
+  /** @type {{ output: { title: string; summary: string; text?: undefined; }; name?: undefined; status?: undefined; started_at?: undefined; head_sha?: undefined; } | { output: { title: string; summary: string; text: string; }; name?: undefined; status?: undefined; started_at?: undefined; head_sha?: undefined; } | { name: string; status: string; started_at: string; head_sha: string | undefined; output: { title: string; summary: string; text?: undefined; }; }} */ checkRunData,
   /** @type {string} */ idPath
 ) => {
   const jwtToken = githubJWT()
@@ -226,10 +229,10 @@ const checkGithubActionRuns = async (
     jwtToken
   )
 
-  await fetch(
+  const resp = await fetch(
     `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/check-runs${idPath}`,
     {
-      method: "PATCH",
+      method: action === "create" ? "POST" : "PATCH",
       headers: {
         Authorization: `token ${accessToken}`,
         Accept: "application/vnd.github.v3+json",
@@ -244,21 +247,27 @@ const checkGithubActionRuns = async (
       console.error("Error managing check run:", err)
     })
 
-  console.log("Updated github check run: ", action)
+  console.log("Updated github check run")
+  console.log(resp)
+
+  // @ts-ignore
+  fs.writeFileSync("checkRunId.txt", resp.id.toString())
 }
 
 const manageCheckRun = async (/** @type {string} */ action) => {
   let checkRunParams = {}
+  let checkRunId = ""
   if (action !== "create") {
+    checkRunId = fs.readFileSync("checkRunId.txt", "utf8")
     checkRunParams = {
-      checkRunId: process.env.CHECK_RUN_ID,
+      checkRunId,
       name: checkRunName,
       status: "completed",
       completed_at: new Date().toISOString(),
       conclusion: action
     }
   }
-  const checkRunIdPath = action !== "create" ? `/${process.env.CHECK_RUN_ID}` : ""
+  const checkRunIdPath = action !== "create" ? `/${checkRunId}` : ""
   let checkRunData
 
   const buildLink = `https://expo.dev/accounts/tifapp/projects/FitnessApp/builds/${process.env.EAS_BUILD_ID}`
@@ -294,11 +303,12 @@ const manageCheckRun = async (/** @type {string} */ action) => {
     break
   default:
     checkRunData = {
-      checkRunId: process.env.CHECK_RUN_ID,
       name: checkRunName,
       status: "in_progress",
+      started_at: new Date().toISOString(),
+      head_sha: process.env.GITHUB_SHA,
       output: {
-        title: `${checkRunName} Ongoing`,
+        title: `${checkRunName} Started`,
         summary: `Build will be finished at approximately ${getPredictedBuildTime()}`
       }
     }
@@ -308,18 +318,22 @@ const manageCheckRun = async (/** @type {string} */ action) => {
 
   if (action === "success") {
     const buildqr = await qrcode.toDataURL(buildLink)
-    await sendImageToSlack(buildqr, `${process.env.PLATFORM} build for \`${process.env.GITHUB_BRANCH}\` is ready:\n${buildLink}\nCommit: ${process.env.GITHUB_SHA}`)
-    console.log("Sent successful build status to slack")
+    await sendImageToSlack(buildqr, `${process.env.GITHUB_BRANCH} is ready:\n${buildLink}`)
   }
   if (action === "failure") {
     await sendMessageToSlack(
       `${process.env.PLATFORM} build for \`${process.env.GITHUB_BRANCH}\` failed. See details at\n${buildLink}`
     )
-    console.log("Sent failed build status to slack")
   }
+  if (action === "create") {
+    await sendMessageToSlack(
+      `A new ${process.env.PLATFORM} build is underway for \`${process.env.GITHUB_BRANCH}\`. The build will be finished at approximately *${getPredictedBuildTime()}*. See details at\n${buildLink}\nCommit: ${process.env.GITHUB_SHA}`
+    )
+  }
+
+  console.log("Sent build status to slack")
 }
 
 if (process.env.RUN_EAS_BUILD_HOOKS === "1") {
-  console.log(process.env)
   manageCheckRun(action)
 }
