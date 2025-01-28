@@ -1,37 +1,47 @@
 import {
   Circle,
+  Group,
   LinearGradient,
   RadialGradient,
   Rect,
+  SkSize,
+  size,
   vec
 } from "@shopify/react-native-skia"
 import { useEffect } from "react"
 import { StyleProp, ViewStyle, useWindowDimensions } from "react-native"
 import {
   Easing,
+  SharedValue,
   useSharedValue,
   withRepeat,
   withSequence,
   withTiming
 } from "react-native-reanimated"
+import { EdgeInsets } from "react-native-safe-area-context"
 
 export type SunBackgroundProps = {
-  style?: StyleProp<ViewStyle>
+  size: SkSize
+  edgeInsets: EdgeInsets
 }
 
-export const SunBackgroundView = ({ style }: SunBackgroundProps) => {
-  const dimensions = useWindowDimensions()
-  const CENTER_X = dimensions.width / 2
-  const CENTER_Y = dimensions.height / 2
-  const CORE_RADIUS = 128
-  const OUTER_RING_RADIUS = 144
-  const FADE_RING_RADIUS = 160
+const CORE_RADIUS = 48
+const OUTER_RING_RADIUS = 56
+const FADE_RING_RADIUS = 64
+const FADE_RING_TARGET_RADIUS = 80
+
+export const SunBackgroundDrawing = ({
+  edgeInsets,
+  size
+}: SunBackgroundProps) => {
+  const sunX = FADE_RING_RADIUS + 24
+  const sunY = edgeInsets.top + FADE_RING_RADIUS
   const ringRadius = useSharedValue(FADE_RING_RADIUS)
-  const ringOpacity = useSharedValue(0.5)
+  const ringOpacity = useSharedValue(0)
   useEffect(() => {
     ringRadius.value = withRepeat(
-      withTiming(180, {
-        duration: 2000,
+      withTiming(FADE_RING_TARGET_RADIUS, {
+        duration: 3500,
         easing: Easing.linear
       }),
       -1,
@@ -40,11 +50,11 @@ export const SunBackgroundView = ({ style }: SunBackgroundProps) => {
     ringOpacity.value = withRepeat(
       withSequence(
         withTiming(1.0, {
-          duration: 500,
+          duration: 1000,
           easing: Easing.linear
         }),
         withTiming(0, {
-          duration: 1500,
+          duration: 2500,
           easing: Easing.linear
         })
       ),
@@ -53,39 +63,39 @@ export const SunBackgroundView = ({ style }: SunBackgroundProps) => {
     )
   }, [ringRadius, ringOpacity])
   return (
-    <>
-      <Rect width={dimensions.width} height={dimensions.height}>
+    <Group>
+      <Rect width={size.width} height={size.height}>
         <LinearGradient
           start={vec(0, 0)}
-          end={vec(dimensions.width, dimensions.height)}
-          colors={["#3AC4F7", "#297DEA", "#7B10F6"]}
+          end={vec(size.width, size.height)}
+          colors={["#3AC4F7", "#6AA5F2", "#9589F7"]}
         />
       </Rect>
-      <Circle cx={CENTER_X} cy={CENTER_Y} r={CORE_RADIUS}>
+      <Circle cx={sunX} cy={sunY} r={CORE_RADIUS}>
         <RadialGradient
-          c={{ x: CENTER_X, y: CENTER_Y }}
+          c={{ x: sunX, y: sunY }}
           r={CORE_RADIUS}
           colors={["#FFFCF0", "#FFFBCC", "#FEE87D", "#FDD62F"]}
           positions={[0.5, 0.75, 0.9, 1]}
         />
       </Circle>
       <Circle
-        cx={CENTER_X}
-        cy={CENTER_Y}
+        cx={sunX}
+        cy={sunY}
         r={OUTER_RING_RADIUS}
         color="#FFD700"
         style="stroke"
         strokeWidth={4}
       />
       <Circle
-        cx={CENTER_X}
-        cy={CENTER_Y}
+        cx={sunX}
+        cy={sunY}
         r={ringRadius}
         color="#FFD700"
         style="stroke"
         opacity={ringOpacity}
         strokeWidth={4}
       />
-    </>
+    </Group>
   )
 }
