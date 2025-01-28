@@ -1,6 +1,18 @@
 import React, { useState } from "react";
 
 import SunJournalBackgroundMeta, { Basic as SunJournalBackground } from "../components/SunJournalBackground/SunJournalBackground.stories";
+import MapSnippetMeta, {
+  Basic as MapSnippet
+} from "../components/MapSnippet/MapSnippet.stories"
+
+import {
+  FlatList,
+  SafeAreaView,
+  Text,
+  TouchableOpacity,
+  View
+} from "react-native"
+import { useAppFonts } from "../../lib/Fonts"
 
 import { FlatList, Text, TouchableOpacity, View } from "react-native";
 import { useAppFonts } from "../../lib/Fonts";
@@ -101,13 +113,16 @@ const stories = [
     component: SunJournalBackground,
     args: SunJournalBackgroundMeta.args
   },
-
   {
     name: DragAndDropMeta.title,
     component: DragAndDrop,
     args: DragAndDropMeta.args
   },
-
+  {
+    name: MapSnippetMeta.title,
+    component: MapSnippet,
+    args: MapSnippetMeta.args
+  },
   {
     name: NameEntryMeta.title,
     component: NameEntryBasic
@@ -266,7 +281,7 @@ const CustomStorybookUI = () => {
 
   // Render the story list
   return (
-    <View style={{ flex: 1, margin: 20 }}>
+    <SafeAreaView style={{ flex: 1, margin: 20 }}>
       <FlatList
         data={stories}
         renderItem={({ item, index }) => (
@@ -284,7 +299,7 @@ const CustomStorybookUI = () => {
           </TouchableOpacity>
         )}
       />
-    </View>
+    </SafeAreaView>
   )
 }
 
