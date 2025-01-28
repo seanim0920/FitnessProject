@@ -6,12 +6,18 @@ import { AppStyles } from "@lib/AppColorStyle"
 import {
   EmailCompositionResult,
   EmailTemplate,
+  presentEmailComposer,
   TIF_SUPPORT_EMAIL
 } from "@lib/EmailComposition"
+import { featureContext } from "@lib/FeatureContext"
+import { compileLogs } from "@lib/Logging"
 import { useOpenWeblink } from "@modules/tif-weblinks"
 import { useQuery } from "@tanstack/react-query"
+import { UserSession } from "@user/Session"
+import { isAvailableAsync } from "expo-mail-composer"
 import React from "react"
 import { StyleProp, ViewStyle } from "react-native"
+import { UserID } from "TiFShared/domain-models/User"
 
 export const COMPILING_LOGS_INFO_URL = "https://logs.com"
 
@@ -34,22 +40,24 @@ const emailSection = (name: string) => {
 }
 
 export const HELP_AND_SUPPORT_EMAILS = {
-  feedbackSubmitted: email(
-    "App Feedback",
-    [],
-    emailSection(
-      "📝 1. Select one or more feedback topics below and provide the necessary details. (Required)"
+  feedbackSubmitted: (userID?: UserID) =>
+    email(
+      "App Feedback",
+      [],
+      emailSection(
+        "📝 1. Select one or more feedback topics below and provide the necessary details. (Required)"
+      ),
+      emailSection("a. App functionality (How could the app help you?)"),
+      emailSection(
+        "b. Creative synergy (Are the features of the app helping you progress?)"
+      ),
+      emailSection("c. Other feedback (Any other general feedback you have)"),
+      emailSection(
+        "📸 2. Provide any supplementary information or files related to the feedback above. (Optional)"
+      ),
+      emailSection(`UserID: ${userID}`)
     ),
-    emailSection("a. App functionality (How could the app help you?)"),
-    emailSection(
-      "b. Creative synergy (Are the features of the app helping you progress?)"
-    ),
-    emailSection("c. Other feedback (Any other general feedback you have)"),
-    emailSection(
-      "📸 2. Provide any supplementary information or files related to the feedback above. (Optional)"
-    )
-  ),
-  bugReported: (compileLogsURI?: string) => {
+  bugReported: (compileLogsURI?: string, userID?: UserID) => {
     return email(
       "App Bug Report",
       compileLogsURI ? [compileLogsURI] : [],
@@ -62,19 +70,22 @@ export const HELP_AND_SUPPORT_EMAILS = {
       emailSection("b. What did you expect to happen? (Required)"),
       emailSection(
         "📸 2. Provide any supplementary information or screenshots related to the feedback above. (Optional)"
-      )
+      ),
+      emailSection(`UserID: ${userID}`)
     )
   },
-  questionSubmitted: email(
-    "App Question",
-    [],
-    emailSection(
-      "❓ 1. List your question(s) and provide all relevant details. (Required)"
-    ),
-    emailSection(
-      "📸 2. Provide any supplementary information or screenshots related to these question(s). (Optional)"
+  questionSubmitted: (userID?: UserID) =>
+    email(
+      "App Question",
+      [],
+      emailSection(
+        "❓ 1. List your question(s) and provide all relevant details. (Required)"
+      ),
+      emailSection(
+        "📸 2. Provide any supplementary information or screenshots related to these question(s). (Optional)"
+      ),
+      emailSection(`UserID: ${userID}`)
     )
-  )
 }
 
 export const HELP_AND_SUPPORT_ALERTS = {
@@ -172,18 +183,24 @@ export const HelpAndSupportView = ({ style, state }: EventSettingsProps) => (
   </TiFFormScrollView>
 )
 
+export const HelpAndSupportFeature = featureContext({
+  isMailComposerAvailable: isAvailableAsync,
+  compileLogs,
+  composeEmail: presentEmailComposer
+})
+
 export type UseHelpAndSupportSettingsEnvironment = {
-  isMailComposerAvailable: () => Promise<boolean>
-  compileLogs: () => Promise<string>
-  composeEmail: (email: EmailTemplate) => Promise<EmailCompositionResult>
+  userSession: UserSession
 }
 
 export const useHelpAndSupportSettings = (
   env: UseHelpAndSupportSettingsEnvironment
 ) => {
+  const { isMailComposerAvailable, compileLogs, composeEmail } =
+    HelpAndSupportFeature.useContext()
   const { data: isShowingContactSection } = useQuery({
     queryKey: ["isMailComposerAvailable"],
-    queryFn: async () => await env.isMailComposerAvailable(),
+    queryFn: async () => await isMailComposerAvailable(),
     initialData: true
   })
   const open = useOpenWeblink()
@@ -192,8 +209,8 @@ export const useHelpAndSupportSettings = (
     isShowingContactSection,
     feedbackSubmitted: () => {
       tryComposeEmail(
-        env.composeEmail,
-        HELP_AND_SUPPORT_EMAILS.feedbackSubmitted,
+        composeEmail,
+        HELP_AND_SUPPORT_EMAILS.feedbackSubmitted(env.userSession.id),
         "submitFeedback"
       )
     },
@@ -203,26 +220,28 @@ export const useHelpAndSupportSettings = (
           async () => {
             try {
               await tryComposeBugReportEmail(
-                env.composeEmail,
-                await env.compileLogs()
+                composeEmail,
+                env.userSession,
+                await compileLogs()
               )
             } catch {
               presentAlert(
                 HELP_AND_SUPPORT_ALERTS.compileLogError(() => {
-                  tryComposeBugReportEmail(env.composeEmail)
+                  tryComposeBugReportEmail(composeEmail, env.userSession)
                 })
               )
             }
           },
-          async () => await tryComposeBugReportEmail(env.composeEmail),
+          async () =>
+            await tryComposeBugReportEmail(composeEmail, env.userSession),
           () => open(COMPILING_LOGS_INFO_URL)
         )
       )
     },
     questionSubmitted: () => {
       tryComposeEmail(
-        env.composeEmail,
-        HELP_AND_SUPPORT_EMAILS.questionSubmitted,
+        composeEmail,
+        HELP_AND_SUPPORT_EMAILS.questionSubmitted(env.userSession.id),
         "submitQuestion"
       )
     }
@@ -231,11 +250,12 @@ export const useHelpAndSupportSettings = (
 
 const tryComposeBugReportEmail = async (
   composeEmail: (email: EmailTemplate) => Promise<EmailCompositionResult>,
+  userSession: UserSession,
   uri?: string
 ) => {
   await tryComposeEmail(
     composeEmail,
-    HELP_AND_SUPPORT_EMAILS.bugReported(uri),
+    HELP_AND_SUPPORT_EMAILS.bugReported(uri, userSession.id),
     "reportBug"
   )
 }
