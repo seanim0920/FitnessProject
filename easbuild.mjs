@@ -205,8 +205,6 @@ const fetchInstallationAccessToken = async (
 }
 
 const githubJWT = () => {
-  console.log(process.env)
-
   return jwt.sign(
     {
       iat: Math.floor(Date.now() / 1000),
@@ -247,8 +245,7 @@ const checkGithubActionRuns = async (
       console.error("Error managing check run:", err)
     })
 
-  console.log("Updated github check run")
-  console.log(resp)
+  console.log("Github check run update:", action)
 
   // @ts-ignore
   fs.writeFileSync("checkRunId.txt", resp.id.toString())
@@ -278,7 +275,8 @@ const manageCheckRun = async (/** @type {string} */ action) => {
       ...checkRunParams,
       output: {
         title: `${checkRunName} Completed`,
-        summary: buildLink
+        summary: `See details at\n${buildLink}`,
+        text: buildLink
       }
     }
     break
@@ -287,7 +285,7 @@ const manageCheckRun = async (/** @type {string} */ action) => {
       ...checkRunParams,
       output: {
         title: `${checkRunName} Failed`,
-        summary: "Build failed with an error.",
+        summary: `Build failed with an error. See details at\n${buildLink}`,
         text: buildLink
       }
     }
@@ -297,7 +295,8 @@ const manageCheckRun = async (/** @type {string} */ action) => {
       ...checkRunParams,
       output: {
         title: `${checkRunName} Cancelled`,
-        summary: "Build was cancelled."
+        summary: `Build was cancelled. See details at\n${buildLink}`,
+        text: buildLink
       }
     }
     break
@@ -309,7 +308,8 @@ const manageCheckRun = async (/** @type {string} */ action) => {
       head_sha: process.env.GITHUB_SHA,
       output: {
         title: `${checkRunName} Started`,
-        summary: `Build will be finished at approximately ${getPredictedBuildTime()}`
+        summary: `Build will be finished at approximately ${getPredictedBuildTime()}. See details at\n${buildLink}`,
+        text: buildLink
       }
     }
   }
@@ -318,20 +318,15 @@ const manageCheckRun = async (/** @type {string} */ action) => {
 
   if (action === "success") {
     const buildqr = await qrcode.toDataURL(buildLink)
-    await sendImageToSlack(buildqr, `${process.env.GITHUB_BRANCH} is ready:\n${buildLink}`)
+    await sendImageToSlack(buildqr, `${process.env.PLATFORM} build for \`${process.env.GITHUB_BRANCH}\` is ready:\n${buildLink}\nCommit: ${process.env.GITHUB_SHA}`)
+    console.log("Sent successful build status to slack")
   }
   if (action === "failure") {
     await sendMessageToSlack(
       `${process.env.PLATFORM} build for \`${process.env.GITHUB_BRANCH}\` failed. See details at\n${buildLink}`
     )
+    console.log("Sent failed build status to slack")
   }
-  if (action === "create") {
-    await sendMessageToSlack(
-      `A new ${process.env.PLATFORM} build is underway for \`${process.env.GITHUB_BRANCH}\`. The build will be finished at approximately *${getPredictedBuildTime()}*. See details at\n${buildLink}\nCommit: ${process.env.GITHUB_SHA}`
-    )
-  }
-
-  console.log("Sent build status to slack")
 }
 
 if (process.env.RUN_EAS_BUILD_HOOKS === "1") {

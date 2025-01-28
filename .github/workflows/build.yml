@@ -3,6 +3,8 @@ name: Project Build
 env:
   TEST_RUNNER_CI: 1
   NODE_VERSION: "20.0.0"
+  IOS_CHECK_NAME: Wait for iOS Build
+  ANDROID_CHECK_NAME: Wait for Android Build
 
 on:
   pull_request:
@@ -27,55 +29,119 @@ jobs:
       - name: Fetch base branch
         run: git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1
 
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
+          
+      - name: Install Dependencies
+        run: |
+          if [ ! -d "node_modules" ]; then
+            echo "Cache not found, running npm ci."
+            npm ci
+          else
+            echo "Cache restored, skipping npm ci."
+          fi
+        env:
+          TIFSHARED_JS: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
       - name: Check for platform-specific changes
         id: check-files
         run: |
           git diff --name-only FETCH_HEAD HEAD > changed_files.txt
           
-          # iOS native file patterns
+          # Initialize change flags
+          ios_changed=false
+          android_changed=false
+          
+          # iOS native file patterns in project
           if grep -q -E "\.(swift|m|h|mm|plist|xcodeproj|xcworkspace|pbxproj)$|ios/Podfile|ios/Podfile.lock" changed_files.txt; then
-            echo "ios_changes=true" >> $GITHUB_OUTPUT
-          else
-            echo "ios_changes=false" >> $GITHUB_OUTPUT
+            ios_changed=true
           fi
           
-          # Android native file patterns
+          # Android native file patterns in project
           if grep -q -E "\.(kotlin|kt|java|gradle|xml|aar)$|android/gradle|android/build.gradle|android/settings.gradle" changed_files.txt; then
-            echo "android_changes=true" >> $GITHUB_OUTPUT
-          else
-            echo "android_changes=false" >> $GITHUB_OUTPUT
+            android_changed=true
           fi
           
-          # Check package.json for native dependencies
+          # Install dependencies if package.json changed
           if git diff FETCH_HEAD HEAD -- package.json | grep -q "dependencies\|devDependencies"; then
             echo "Checking package.json changes..."
+            
+            # Install dependencies for both versions to compare
             git show FETCH_HEAD:package.json > old_package.json
             git show HEAD:package.json > new_package.json
             
-            if ! command -v jq &> /dev/null; then
-              sudo apt-get update && sudo apt-get install -y jq
-            fi
+            # Create temporary directories for both versions
+            mkdir -p old_deps new_deps
             
-            function check_native_deps() {
-              local old_deps=$(jq -r "$1" old_package.json)
-              local new_deps=$(jq -r "$1" new_package.json)
-              
-              if [ "$old_deps" != "$new_deps" ]; then
-                local native_patterns="react-native-|@react-native|expo-|@expo"
-                if echo "$new_deps" | grep -q "$native_patterns"; then
-                  return 0
-                fi
+            # Install old dependencies
+            cd old_deps
+            cp ../old_package.json package.json
+            npm install --production --ignore-scripts
+            cd ..
+            
+            # Install new dependencies
+            cd new_deps
+            cp ../new_package.json package.json
+            npm install --production --ignore-scripts
+            cd ..
+            
+            # Function to check for native code in node_modules
+            function check_native_code() {
+              local dir=$1
+              # Check for native files recursively
+              if find "$dir/node_modules" -type f \( \
+                -name "*.swift" -o \
+                -name "*.m" -o \
+                -name "*.h" -o \
+                -name "*.mm" -o \
+                -name "*.pbxproj" -o \
+                -name "*.xcodeproj" -o \
+                -name "*.xcworkspace" -o \
+                -name "*.plist" -o \
+                -name "Podfile" -o \
+                -name "*.gradle" -o \
+                -name "*.java" -o \
+                -name "*.kt" -o \
+                -name "*.aar" \
+              \) 2>/dev/null | grep -q .; then
+                return 0
               fi
+              
+              # Check package.json files for native dependencies
+              if find "$dir/node_modules" -name "package.json" -type f -exec grep -l "react-native\|@react-native\|expo-\|@expo" {} \; | grep -q .; then
+                return 0
+              fi
+              
               return 1
             }
             
-            if check_native_deps '.dependencies' || check_native_deps '.devDependencies'; then
-              echo "ios_changes=true" >> $GITHUB_OUTPUT
-              echo "android_changes=true" >> $GITHUB_OUTPUT
+            # Compare dependencies
+            if [ -d "old_deps/node_modules" ] && [ -d "new_deps/node_modules" ]; then
+              old_native=$(check_native_code "old_deps")
+              new_native=$(check_native_code "new_deps")
+              
+              if [ "$old_native" != "$new_native" ] || check_native_code "new_deps"; then
+                ios_changed=true
+                android_changed=true
+              fi
             fi
             
-            rm old_package.json new_package.json
+            # Cleanup
+            rm -rf old_deps new_deps old_package.json new_package.json
           fi
+          
+          # Set outputs
+          echo "ios_changes=$ios_changed" >> $GITHUB_OUTPUT
+          echo "android_changes=$android_changed" >> $GITHUB_OUTPUT
 
   setup_and_lint:
     if: github.actor != 'roswaaltifbot' && !startsWith(github.event.pull_request.title, 'IGNORE_BUILD')
@@ -121,7 +187,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "20.0.0"
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
           
       - name: Install Dependencies
         run: |
@@ -157,7 +224,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "20.0.0"
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
       - name: Bundle Project
         run: npx expo export --platform ios --platform android
@@ -176,8 +244,12 @@ jobs:
       - run: echo "Waiting for environment review"
 
   create_build_checkruns:
-    needs: [build, check_platform_changes, wait_for_review]
-    if: github.actor != 'roswaaltifbot' && !startsWith(github.event.pull_request.title, 'IGNORE_BUILD')
+    needs: [build, check_platform_changes]
+    if: |
+      github.actor != 'roswaaltifbot' && 
+      !startsWith(github.event.pull_request.title, 'IGNORE_BUILD') &&
+      needs.check_platform_changes.outputs.ios_changes == 'false' &&
+      needs.check_platform_changes.outputs.android_changes == 'false'
     runs-on: ubuntu-latest
     outputs:
       ios_checkrun_id: ${{ steps.ios-checkrun.outputs.checkrun_id }}
@@ -188,18 +260,18 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const iosChanges = '${{ needs.check_platform_changes.outputs.ios_changes }}' === 'true';
             const checkRun = await github.rest.checks.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              name: 'Wait for iOS Build',
+              name: process.env.IOS_CHECK_NAME,
               head_sha: context.payload.pull_request.head.sha,
-              status: iosChanges ? 'queued' : 'completed',
+              status: 'completed',
               started_at: new Date().toISOString(),
-              ...(iosChanges ? {} : { completed_at: new Date().toISOString(), conclusion: 'success' }),
+              completed_at: new Date().toISOString(),
+              conclusion: 'success',
               output: {
-                title: iosChanges ? 'Requesting an IOS Build' : 'No iOS Changes Detected',
-                summary: iosChanges ? 'Requesting a new IOS build.' : 'No native iOS changes were detected in this PR'
+                title: 'No iOS Changes Detected',
+                summary: 'No native iOS changes were detected in this PR'
               }
             });
             core.setOutput('checkrun_id', checkRun.data.id);
@@ -209,24 +281,24 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const androidChanges = '${{ needs.check_platform_changes.outputs.android_changes }}' === 'true';
             const checkRun = await github.rest.checks.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              name: 'Wait for Android Build',
+              name: process.env.ANDROID_CHECK_NAME,
               head_sha: context.payload.pull_request.head.sha,
-              status: androidChanges ? 'queued' : 'completed',
+              status: 'completed',
               started_at: new Date().toISOString(),
-              ...(androidChanges ? {} : { completed_at: new Date().toISOString(), conclusion: 'success' }),
+              completed_at: new Date().toISOString(),
+              conclusion: 'success',
               output: {
-                title: androidChanges ? 'Requesting an ANDROID Build' : 'No Android Changes Detected',
-                summary: androidChanges ? 'Requesting a new ANDROID build.' : 'No native Android changes were detected in this PR'
+                title: 'No Android Changes Detected',
+                summary: 'No native Android changes were detected in this PR'
               }
             });
             core.setOutput('checkrun_id', checkRun.data.id);
 
   eas_build:
-    needs: [create_build_checkruns, check_platform_changes]
+    needs: [build, check_platform_changes, wait_for_review]
     if: |
       github.actor != 'roswaaltifbot' && 
       !startsWith(github.event.pull_request.title, 'IGNORE_BUILD') &&
@@ -276,7 +348,7 @@ jobs:
         if: needs.check_platform_changes.outputs.ios_changes == 'true'
         run: |
           {
-            echo "CHECK_RUN_NAME=Wait for iOS Build"
+            echo "CHECK_RUN_NAME=${{ env.IOS_CHECK_NAME }}"
             echo "PLATFORM=IOS"
             echo "CHECK_RUN_ID=${{ needs.create_build_checkruns.outputs.ios_checkrun_id }}"
           } >> .env.infra
@@ -288,7 +360,7 @@ jobs:
         if: needs.check_platform_changes.outputs.android_changes == 'true'
         run: |
           {
-            echo "CHECK_RUN_NAME=Wait for Android Build"
+            echo "CHECK_RUN_NAME=${{ env.ANDROID_CHECK_NAME }}"
             echo "PLATFORM=ANDROID"
             echo "CHECK_RUN_ID=${{ needs.create_build_checkruns.outputs.android_checkrun_id }}"
           } >> .env.infra
