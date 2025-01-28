@@ -5,20 +5,18 @@ import {
   RadialGradient,
   Rect,
   SkSize,
-  size,
   vec
 } from "@shopify/react-native-skia"
 import { useEffect } from "react"
-import { StyleProp, ViewStyle, useWindowDimensions } from "react-native"
 import {
   Easing,
-  SharedValue,
   useSharedValue,
   withRepeat,
   withSequence,
   withTiming
 } from "react-native-reanimated"
 import { EdgeInsets } from "react-native-safe-area-context"
+import { MovingCloudsDrawing, cloud } from "./Clouds"
 
 export type SunBackgroundProps = {
   size: SkSize
@@ -29,6 +27,44 @@ const CORE_RADIUS = 48
 const OUTER_RING_RADIUS = 56
 const FADE_RING_RADIUS = 64
 const FADE_RING_TARGET_RADIUS = 80
+
+const CLOUDS_1 = [
+  cloud({
+    relativeX: 0.6,
+    relativeY: 0.1,
+    relativeRangeX: 0.1,
+    scale: 0.3,
+    speed: 30_000
+  }),
+  cloud({
+    relativeX: 0.4,
+    relativeY: 0.15,
+    relativeRangeX: 0.15,
+    scale: 0.5,
+    speed: 23_000
+  }),
+  cloud({
+    relativeX: 0.6,
+    relativeY: 0.17,
+    relativeRangeX: 0.15,
+    scale: 0.55,
+    speed: 21_000
+  }),
+  cloud({
+    relativeX: 0.3,
+    relativeY: 0.23,
+    relativeRangeX: 0.2,
+    scale: 0.7,
+    speed: 16_000
+  }),
+  cloud({
+    relativeX: 0.1,
+    relativeY: 0.26,
+    relativeRangeX: 0.25,
+    scale: 0.8,
+    speed: 12_000
+  })
+]
 
 export const SunBackgroundDrawing = ({
   edgeInsets,
@@ -75,7 +111,7 @@ export const SunBackgroundDrawing = ({
         <RadialGradient
           c={{ x: sunX, y: sunY }}
           r={CORE_RADIUS}
-          colors={["#FFFCF0", "#FFFBCC", "#FEE87D", "#FDD62F"]}
+          colors={["#FFFCF0", "#FCF0BE", "#FAEAA5", "#F9E48C"]}
           positions={[0.5, 0.75, 0.9, 1]}
         />
       </Circle>
@@ -83,7 +119,7 @@ export const SunBackgroundDrawing = ({
         cx={sunX}
         cy={sunY}
         r={OUTER_RING_RADIUS}
-        color="#FFD700"
+        color="#FBE277"
         style="stroke"
         strokeWidth={4}
       />
@@ -91,11 +127,12 @@ export const SunBackgroundDrawing = ({
         cx={sunX}
         cy={sunY}
         r={ringRadius}
-        color="#FFD700"
+        color="#FBE277"
         style="stroke"
         opacity={ringOpacity}
         strokeWidth={4}
       />
+      <MovingCloudsDrawing size={size} clouds={CLOUDS_1} />
     </Group>
   )
 }
