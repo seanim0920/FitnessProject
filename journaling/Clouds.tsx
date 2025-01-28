@@ -1,5 +1,5 @@
 import React, { useEffect } from "react"
-import { Circle, Group, mix, SkSize } from "@shopify/react-native-skia"
+import { Circle, Group, SkSize } from "@shopify/react-native-skia"
 import {
   useDerivedValue,
   useSharedValue,
@@ -35,7 +35,6 @@ export type CloudProps = {
  */
 export const CloudDrawing = ({ size, cloud, initialProgress }: CloudProps) => {
   const progress = useSharedValue(initialProgress)
-
   useEffect(() => {
     progress.value = withRepeat(
       withSequence(
@@ -50,14 +49,13 @@ export const CloudDrawing = ({ size, cloud, initialProgress }: CloudProps) => {
     const baseX = size.width * cloud.relativeX
     const range = size.width * cloud.relativeRangeX
     const end = baseX + range
-
     const x = baseX + progress.value * (end - baseX)
     return [
       { translateX: x },
       { translateY: size.height * cloud.relativeY },
       { scale: cloud.scale }
     ]
-  }, [progress])
+  }, [progress, cloud, size])
   return (
     <Group transform={transform}>
       <Circle cx={30} cy={15} r={30} color="white" />
@@ -66,15 +64,6 @@ export const CloudDrawing = ({ size, cloud, initialProgress }: CloudProps) => {
     </Group>
   )
 }
-
-// const CLOUDS: Cloud[] = [
-//   cloud({ relativeY: 0.15 })
-//   { id: "small1", relativeY: 60, scale: 0.5, speed: 15000 },
-//   { id: "small2", relativeY: 100, scale: 0.4, speed: 18000 },
-//   { id: "medium1", relativeY: 150, scale: 0.7, speed: 16000 },
-//   { id: "medium2", relativeY: 220, scale: 0.8, speed: 20000 },
-//   { id: "large1", relativeY: 300, scale: 1.0, speed: 22000 }
-// ]
 
 export type MovingCloudsProps = {
   size: SkSize
