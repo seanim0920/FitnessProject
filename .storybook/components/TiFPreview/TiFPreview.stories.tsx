@@ -1,6 +1,7 @@
 import { TiFView } from "@core-root"
 import { EventMocks } from "@event-details-boundary/MockData"
 import { clientSideEventFromResponse } from "@event/ClientSideEvent"
+import { eventsByRegion } from "@explore-events-boundary"
 import { randomIntegerInRange } from "@lib/utils/Random"
 import { SettingsProvider } from "@settings-storage/Hooks"
 import { SQLiteLocalSettingsStorage } from "@settings-storage/LocalSettings"
@@ -38,13 +39,7 @@ export const Basic = () => (
     <UserProfileFeature.Provider>
       <AlphaUserSessionProvider storage={storage}>
         <TiFView
-          fetchEvents={async () =>
-            repeatElements(10, () =>
-              clientSideEventFromResponse(
-                EventMocks.MockMultipleAttendeeResponse
-              )
-            ).map((e) => ({ ...e, id: randomIntegerInRange(0, 10_000) }))
-          }
+          fetchEvents={eventsByRegion}
           isFontsLoaded={true}
           style={{ flex: 1 }}
         />
