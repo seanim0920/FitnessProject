@@ -13,7 +13,6 @@ import { featureContext } from "@lib/FeatureContext"
 import { compileLogs } from "@lib/Logging"
 import { useOpenWeblink } from "@modules/tif-weblinks"
 import { useQuery } from "@tanstack/react-query"
-import { UserSession } from "@user/Session"
 import { isAvailableAsync } from "expo-mail-composer"
 import React from "react"
 import { StyleProp, ViewStyle } from "react-native"
@@ -36,16 +35,16 @@ const email = (
 })
 
 const emailSection = (name: string) => {
-  return `<strong>${name}</strong><br><br><br>` as EmailSection
+  return `<strong>${name}</strong><br><br><br><br><br><br>` as EmailSection
 }
 
 export const HELP_AND_SUPPORT_EMAILS = {
   feedbackSubmitted: (userID?: UserID) =>
     email(
-      "App Feedback",
+      `App Feedback - UserID: ${userID}`,
       [],
       emailSection(
-        "📝 1. Select one or more feedback topics below and provide the necessary details. (Required)"
+        "📝 Select one or more feedback topics below and provide the necessary details. (Required)"
       ),
       emailSection("a. App functionality (How could the app help you?)"),
       emailSection(
@@ -53,38 +52,35 @@ export const HELP_AND_SUPPORT_EMAILS = {
       ),
       emailSection("c. Other feedback (Any other general feedback you have)"),
       emailSection(
-        "📸 2. Provide any supplementary information or files related to the feedback above. (Optional)"
-      ),
-      emailSection(`UserID: ${userID}`)
+        "📸 Provide any supplementary information or files related to the feedback above. (Optional)"
+      )
     ),
   bugReported: (compileLogsURI?: string, userID?: UserID) => {
     return email(
-      "App Bug Report",
+      `App Bug Report - UserID: ${userID}`,
       compileLogsURI ? [compileLogsURI] : [],
       emailSection(
-        "🐞 1. Briefly describe the bug and the issues it is causing in the app. (Required)"
+        "🐞 Briefly describe the bug and the issues it is causing in the app. (Required)"
       ),
       emailSection(
         "a. Specify the steps that it took for you to get to the bug. (Required)"
       ),
       emailSection("b. What did you expect to happen? (Required)"),
       emailSection(
-        "📸 2. Provide any supplementary information or screenshots related to the feedback above. (Optional)"
-      ),
-      emailSection(`UserID: ${userID}`)
+        "📸 Provide any supplementary information or screenshots related to the feedback above. (Optional)"
+      )
     )
   },
   questionSubmitted: (userID?: UserID) =>
     email(
-      "App Question",
+      `App Question - UserID: ${userID}`,
       [],
       emailSection(
-        "❓ 1. List your question(s) and provide all relevant details. (Required)"
+        "❓ List your question(s) and provide all relevant details. (Required)"
       ),
       emailSection(
-        "📸 2. Provide any supplementary information or screenshots related to these question(s). (Optional)"
-      ),
-      emailSection(`UserID: ${userID}`)
+        "📸 Provide any supplementary information or screenshots related to these question(s). (Optional)"
+      )
     )
 }
 
@@ -190,7 +186,7 @@ export const HelpAndSupportFeature = featureContext({
 })
 
 export type UseHelpAndSupportSettingsEnvironment = {
-  userSession: UserSession
+  userID: UserID
 }
 
 export const useHelpAndSupportSettings = (
@@ -210,7 +206,7 @@ export const useHelpAndSupportSettings = (
     feedbackSubmitted: () => {
       tryComposeEmail(
         composeEmail,
-        HELP_AND_SUPPORT_EMAILS.feedbackSubmitted(env.userSession.id),
+        HELP_AND_SUPPORT_EMAILS.feedbackSubmitted(env.userID),
         "submitFeedback"
       )
     },
@@ -221,19 +217,18 @@ export const useHelpAndSupportSettings = (
             try {
               await tryComposeBugReportEmail(
                 composeEmail,
-                env.userSession,
+                env.userID,
                 await compileLogs()
               )
             } catch {
               presentAlert(
                 HELP_AND_SUPPORT_ALERTS.compileLogError(() => {
-                  tryComposeBugReportEmail(composeEmail, env.userSession)
+                  tryComposeBugReportEmail(composeEmail, env.userID)
                 })
               )
             }
           },
-          async () =>
-            await tryComposeBugReportEmail(composeEmail, env.userSession),
+          async () => await tryComposeBugReportEmail(composeEmail, env.userID),
           () => open(COMPILING_LOGS_INFO_URL)
         )
       )
@@ -241,7 +236,7 @@ export const useHelpAndSupportSettings = (
     questionSubmitted: () => {
       tryComposeEmail(
         composeEmail,
-        HELP_AND_SUPPORT_EMAILS.questionSubmitted(env.userSession.id),
+        HELP_AND_SUPPORT_EMAILS.questionSubmitted(env.userID),
         "submitQuestion"
       )
     }
@@ -250,12 +245,12 @@ export const useHelpAndSupportSettings = (
 
 const tryComposeBugReportEmail = async (
   composeEmail: (email: EmailTemplate) => Promise<EmailCompositionResult>,
-  userSession: UserSession,
+  userID: UserID,
   uri?: string
 ) => {
   await tryComposeEmail(
     composeEmail,
-    HELP_AND_SUPPORT_EMAILS.bugReported(uri, userSession.id),
+    HELP_AND_SUPPORT_EMAILS.bugReported(uri, userID),
     "reportBug"
   )
 }
@@ -279,7 +274,7 @@ type PresetSectionProps = {
   state: ReturnType<typeof useHelpAndSupportSettings>
 }
 
-export const HelpSectionView = ({ state }: PresetSectionProps) => {
+const HelpSectionView = ({ state }: PresetSectionProps) => {
   const open = useOpenWeblink()
   return (
     <>

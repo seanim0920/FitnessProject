@@ -1,4 +1,9 @@
-import { NavigationProp, useNavigation } from "@react-navigation/native"
+import {
+  EditEventFormValues,
+  toRouteableEditFormValues
+} from "@event/EditFormValues"
+import { useNavigation } from "@react-navigation/native"
+import { NativeStackHeaderLeftProps } from "@react-navigation/native-stack"
 import { type NavigationState } from "@react-navigation/routers"
 import {
   StackNavigationProp,
@@ -6,14 +11,9 @@ import {
 } from "@react-navigation/stack"
 import React, { useEffect, useRef } from "react"
 import { StyleProp, StyleSheet, ViewStyle } from "react-native"
-import { TouchableIonicon } from "./common/Icons"
 import { EventID } from "TiFShared/domain-models/Event"
 import { UserHandle, UserID } from "TiFShared/domain-models/User"
-import {
-  EditEventFormValues,
-  toRouteableEditFormValues
-} from "@event/EditFormValues"
-import { NativeStackHeaderLeftProps } from "@react-navigation/native-stack"
+import { TouchableIonicon } from "./common/Icons"
 
 /**
  * A helper type that's useful for making reusable navigation flows.

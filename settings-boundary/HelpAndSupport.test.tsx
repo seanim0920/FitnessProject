@@ -2,7 +2,6 @@ import { captureAlerts } from "@test-helpers/Alerts"
 import { TestQueryClientProvider } from "@test-helpers/ReactQuery"
 import { act, renderHook, waitFor } from "@testing-library/react-native"
 import { AlphaUserMocks } from "@user/alpha/MockData"
-import { EmailAddress } from "@user/privacy"
 import {
   HELP_AND_SUPPORT_ALERTS,
   HELP_AND_SUPPORT_EMAILS,
@@ -168,10 +167,7 @@ describe("HelpAndSupportSettings tests", () => {
       return renderHook(
         () =>
           useHelpAndSupportSettings({
-            userSession: {
-              ...AlphaUserMocks.TheDarkLord,
-              primaryContactInfo: EmailAddress.peacock69
-            }
+            userID: AlphaUserMocks.TheDarkLord.id
           }),
         {
           wrapper: ({ children }: any) => (

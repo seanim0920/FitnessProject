@@ -1,10 +1,11 @@
 import { useBackButton } from "@components/Navigation"
+import { WithAlphaRegistrationProps } from "@core-root/AlphaRegister"
 import { StaticScreenProps, useNavigation } from "@react-navigation/native"
-import { UserSession } from "@user/Session"
 import {
-  HelpSectionView,
+  HelpAndSupportView,
   useHelpAndSupportSettings
 } from "settings-boundary/HelpAndSupport"
+import { UserID } from "TiFShared/domain-models/User"
 
 export const helpAndSupportScreens = () => ({
   helpAndSupport: {
@@ -15,16 +16,20 @@ export const helpAndSupportScreens = () => ({
   }
 })
 
-type HelpAndSupportScreenProps = StaticScreenProps<{
-  user: UserSession
-}>
+type RoutableHelpAndSupportScreenValues = {
+  id: UserID
+}
+
+type HelpAndSupportScreenProps = WithAlphaRegistrationProps<
+  StaticScreenProps<RoutableHelpAndSupportScreenValues>
+>
 
 const HelpAndSupportScreen = ({ route }: HelpAndSupportScreenProps) => {
   const navigation = useNavigation()
   useBackButton()
   const state = useHelpAndSupportSettings({
-    userSession: route.params.user
+    userID: route.params.id
   })
 
-  return <HelpSectionView state={state}></HelpSectionView>
+  return <HelpAndSupportView state={state}></HelpAndSupportView>
 }
