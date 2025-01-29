@@ -287,17 +287,13 @@ jobs:
     steps:
       - run: echo "Waiting for environment review"
 
-  create_build_checkruns:
-    needs: [build, check_platform_changes]
+  ignore_ios_build:
+    needs: [check_platform_changes]
     if: |
       github.actor != 'roswaaltifbot' && 
       !startsWith(github.event.pull_request.title, 'IGNORE_BUILD') &&
-      needs.check_platform_changes.outputs.ios_changes == 'false' &&
-      needs.check_platform_changes.outputs.android_changes == 'false'
+      needs.check_platform_changes.outputs.ios_changes == 'false'
     runs-on: ubuntu-latest
-    outputs:
-      ios_checkrun_id: ${{ steps.ios-checkrun.outputs.checkrun_id }}
-      android_checkrun_id: ${{ steps.android-checkrun.outputs.checkrun_id }}
     steps:
       - name: Create iOS Check Run
         id: ios-checkrun
@@ -318,8 +314,15 @@ jobs:
                 summary: 'No native iOS changes were detected in this PR'
               }
             });
-            core.setOutput('checkrun_id', checkRun.data.id);
 
+  ignore_android_build:
+    needs: [check_platform_changes]
+    if: |
+      github.actor != 'roswaaltifbot' && 
+      !startsWith(github.event.pull_request.title, 'IGNORE_BUILD') &&
+      needs.check_platform_changes.outputs.android_changes == 'false'
+    runs-on: ubuntu-latest
+    steps:
       - name: Create Android Check Run
         id: android-checkrun
         uses: actions/github-script@v6
@@ -339,7 +342,6 @@ jobs:
                 summary: 'No native Android changes were detected in this PR'
               }
             });
-            core.setOutput('checkrun_id', checkRun.data.id);
 
   eas_build:
     needs: [build, check_platform_changes, wait_for_review]
