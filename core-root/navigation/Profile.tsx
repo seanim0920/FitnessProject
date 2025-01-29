@@ -1,5 +1,8 @@
+import { TouchableIonicon } from "@components/common/Icons"
 import { useBackButton } from "@components/Navigation"
-import { StaticScreenProps } from "@react-navigation/native"
+import { StaticScreenProps, useNavigation } from "@react-navigation/native"
+import { useUserSession } from "@user/Session"
+import React, { useEffect } from "react"
 import { UserHandle, UserID } from "TiFShared/domain-models/User"
 import {
   UserProfileView,
@@ -19,7 +22,21 @@ type ProfileScreenProps = StaticScreenProps<{
 }>
 
 const ProfileScreen = ({ route }: ProfileScreenProps) => {
+  const navigation = useNavigation()
+  const { userSession } = useUserSession()
   useBackButton()
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableIonicon
+          onPress={async () =>
+            navigation.navigate("helpAndSupport", { user: await userSession() })
+          }
+          icon={{ name: "settings" }}
+        />
+      )
+    })
+  }, [navigation, userSession])
   return (
     <UserProfileView
       userInfoState={useUserProfile({ userId: route.params.id.toString() })}

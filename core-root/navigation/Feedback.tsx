@@ -1,5 +1,5 @@
-import { XMarkBackButton } from "@components/Navigation"
-import { StaticScreenProps } from "@react-navigation/native"
+import { useBackButton } from "@components/Navigation"
+import { StaticScreenProps, useNavigation } from "@react-navigation/native"
 import { UserSession } from "@user/Session"
 import {
   HelpSectionView,
@@ -9,8 +9,7 @@ import {
 export const helpAndSupportScreens = () => ({
   helpAndSupport: {
     options: {
-      headerLeft: XMarkBackButton,
-      headerTitle: ""
+      headerTitle: "Help and Support"
     },
     screen: HelpAndSupportScreen
   }
@@ -21,6 +20,8 @@ type HelpAndSupportScreenProps = StaticScreenProps<{
 }>
 
 const HelpAndSupportScreen = ({ route }: HelpAndSupportScreenProps) => {
+  const navigation = useNavigation()
+  useBackButton()
   const state = useHelpAndSupportSettings({
     userSession: route.params.user
   })

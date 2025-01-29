@@ -3,7 +3,6 @@ import { registerRootComponent } from "expo"
 import "TiFShared"
 
 console.log(API_URL)
-console.log(BUILD_TYPE)
 
 if (BUILD_TYPE !== "storybook") {
   // @ts-ignore App entry
