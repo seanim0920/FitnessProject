@@ -51,14 +51,14 @@ const CLOUDS_1 = [
     speed: 21_000
   }),
   cloud({
-    relativeX: 0.3,
+    relativeX: 0.03,
     relativeY: 0.23,
     relativeRangeX: 0.2,
     scale: 0.7,
     speed: 16_000
   }),
   cloud({
-    relativeX: 0.1,
+    relativeX: 0.2,
     relativeY: 0.26,
     relativeRangeX: 0.25,
     scale: 0.8,

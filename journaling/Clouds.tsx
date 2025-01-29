@@ -26,25 +26,31 @@ export const cloud = (values: Omit<Cloud, "id">) => {
 export type CloudProps = {
   cloud: Cloud
   size: SkSize
-  initialProgress: number
+  hasReversedMovement: boolean
 }
 
 /**
  * A single cloud made of overlapping circles,
  * animated to move from right to left.
  */
-export const CloudDrawing = ({ size, cloud, initialProgress }: CloudProps) => {
-  const progress = useSharedValue(initialProgress)
+export const CloudDrawing = ({
+  size,
+  cloud,
+  hasReversedMovement
+}: CloudProps) => {
+  const end = hasReversedMovement ? 0 : 1
+  const start = hasReversedMovement ? 1 : 0
+  const progress = useSharedValue(start)
   useEffect(() => {
     progress.value = withRepeat(
       withSequence(
-        withTiming(1, { duration: cloud.speed }),
-        withTiming(0, { duration: cloud.speed })
+        withTiming(end, { duration: cloud.speed }),
+        withTiming(start, { duration: cloud.speed })
       ),
       Infinity,
       true
     )
-  }, [progress, cloud.speed])
+  }, [progress, cloud.speed, end, start])
   const transform = useDerivedValue(() => {
     const baseX = size.width * cloud.relativeX
     const range = size.width * cloud.relativeRangeX
@@ -79,7 +85,7 @@ export const MovingCloudsDrawing = ({ size, clouds }: MovingCloudsProps) => (
     {clouds.map((c, i) => (
       <CloudDrawing
         key={c.id}
-        initialProgress={(i + 1) / clouds.length}
+        hasReversedMovement={i % 2 === 0}
         size={size}
         cloud={c}
       />
