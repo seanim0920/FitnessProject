@@ -36,14 +36,12 @@ export const Basic = () => (
     localSettingsStore={localSettings}
     userSettingsStore={userSettings}
   >
-    <UserProfileFeature.Provider>
-      <AlphaUserSessionProvider storage={storage}>
-        <TiFView
-          fetchEvents={eventsByRegion}
-          isFontsLoaded={true}
-          style={{ flex: 1 }}
-        />
-      </AlphaUserSessionProvider>
-    </UserProfileFeature.Provider>
+    <AlphaUserSessionProvider storage={storage}>
+      <TiFView
+        fetchEvents={eventsByRegion}
+        isFontsLoaded={true}
+        style={{ flex: 1 }}
+      />
+    </AlphaUserSessionProvider>
   </SettingsProvider>
 )

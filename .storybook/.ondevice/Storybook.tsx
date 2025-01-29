@@ -1,5 +1,8 @@
 import React, { useState } from "react"
 
+import SunJournalBackgroundMeta, {
+  Basic as SunJournalBackground
+} from "../components/SunJournalBackground/SunJournalBackground.stories"
 import MapSnippetMeta, {
   Basic as MapSnippet
 } from "../components/MapSnippet/MapSnippet.stories"
@@ -13,11 +16,7 @@ import {
 } from "react-native"
 import { useAppFonts } from "../../lib/Fonts"
 
-// Import your
 import { setupCognito } from "@auth-boundary/CognitoHelpers"
-import NameEntryMeta, {
-  Basic as NameEntryBasic
-} from "../components/NameEntry/NameEntry.stories"
 import AttendeesListMeta, {
   Basic as AttendeesListBasic
 } from "../components/AttendeesList/AttendeesList.stories"
@@ -33,6 +32,9 @@ import ContentReportingMeta, {
 import ContentTextMeta, {
   Basic as ContentTextBasic
 } from "../components/ContentText/ContextText.stories"
+import DragAndDropMeta, {
+  Basic as DragAndDrop
+} from "../components/DragAndDrop/DragAndDrop.stories"
 import EventDetailsMeta, {
   Basic as EventDetailsBasic
 } from "../components/EventDetails/EventDetails.stories"
@@ -45,6 +47,9 @@ import ForgotPasswordMeta, {
 import LocationSearchMeta, {
   Basic as LocationSearchBasic
 } from "../components/LocationSearch/LocationSearch.stories"
+import NameEntryMeta, {
+  Basic as NameEntryBasic
+} from "../components/NameEntry/NameEntry.stories"
 import ProfileMeta, {
   Basic as ProfileScreenBasic
 } from "../components/ProfileScreen/Avatar.stories"
@@ -105,11 +110,20 @@ addLogHandler(
 // Create an array of stories
 const stories = [
   {
+    name: SunJournalBackgroundMeta.title,
+    component: SunJournalBackground,
+    args: SunJournalBackgroundMeta.args
+  },
+  {
+    name: DragAndDropMeta.title,
+    component: DragAndDrop,
+    args: DragAndDropMeta.args
+  },
+  {
     name: MapSnippetMeta.title,
     component: MapSnippet,
     args: MapSnippetMeta.args
   },
-
   {
     name: NameEntryMeta.title,
     component: NameEntryBasic
