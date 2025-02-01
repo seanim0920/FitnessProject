@@ -1,4 +1,5 @@
 import {
+  AnimatedProp,
   Circle,
   Group,
   LinearGradient,
@@ -56,10 +57,23 @@ export const MORNING_DAY_SUN_GRADIENT: SunGradient = [
   "#F89F68"
 ]
 
+export const SUNSET_SUN_GRADIENT: SunGradient = [
+  "#FEB16F",
+  "#F59861",
+  "#F18C5B",
+  "#ED7F54"
+]
+
 export const MID_DAY_SKY_GRADIENT: SkyGradient = [
   "#3FADFB",
   "#6CACFF",
   "#3183FD"
+]
+
+export const MORNING_SKY_GRADIENT: SkyGradient = [
+  "#17D0F9",
+  "#24B7FB",
+  "#319EFD"
 ]
 
 export const SUNRISE_SKY_GRADIENT: SkyGradient = [
@@ -67,6 +81,12 @@ export const SUNRISE_SKY_GRADIENT: SkyGradient = [
   "#F57A86",
   "#65C5F6",
   "#9ADDFA"
+]
+
+export const SUNSET_SKY_GRADIENT: SkyGradient = [
+  "#F7482E",
+  "#EC54B6",
+  "#0C52BA"
 ]
 
 export type SunBackgroundProps = {
@@ -85,14 +105,25 @@ export const SunBackgroundDrawing = ({
   background,
   size
 }: SunBackgroundProps) => {
+  const POSITIONS = [
+    [vec(-size.width * 1.35, size.height / 2), vec(size.width, size.height)],
+    [vec(-size.width * 0.65, size.height * 0.35), vec(size.width, size.height)],
+    [vec(size.width / 2, 0), vec(size.width / 2, size.height)],
+    [],
+    [
+      vec(-size.width * 1.35, size.height / 2),
+      vec(size.width * 1.75, size.height)
+    ]
+  ]
   return (
     <Group>
       <Rect width={size.width} height={size.height}>
         <LinearGradient
-          // start={vec(-size.width * 1.1, size.height / 4)}
-          start={vec(size.width / 2, 0)}
+          // start={vec(-size.width * 1.35, size.height / 2)}
+          start={POSITIONS[1][0]}
           // end={vec(size.width, size.height)}
-          end={vec(size.width / 2, size.height)}
+          end={POSITIONS[1][1]}
+          // transform={[{ translateX: size.width }, { scaleX: -1 }]}
           colors={background.skyGradient}
           positions={[0.3, 0.45, 0.8, 1]}
         />
@@ -114,11 +145,16 @@ export const SunDrawing = ({ sun, size, edgeInsets }: SunProps) => {
     width: size.width - edgeInsets.left - edgeInsets.right,
     height: size.height - edgeInsets.top - edgeInsets.bottom
   }
-  const insetHeightDiff = size.height - insetSize.height
-  const relativeY =
-    sun.relativePosition.y * (insetSize.width / insetSize.height)
+  const topInsetHeightDiff = size.height - (size.height - edgeInsets.top)
+  const insetAspectRatio = insetSize.width / insetSize.height
+  // console.log("a", insetAspectRatio)
+  const relativeY = sun.relativePosition.y * insetAspectRatio
   const sunX = size.width * sun.relativePosition.x
-  const sunY = FADE_RING_RADIUS + insetHeightDiff - insetSize.height * relativeY
+  const sunY =
+    edgeInsets.top +
+    FADE_RING_RADIUS +
+    topInsetHeightDiff -
+    insetSize.height * relativeY
   const ringRadius = useSharedValue(FADE_RING_RADIUS)
   const ringOpacity = useSharedValue(0)
   useEffect(() => {

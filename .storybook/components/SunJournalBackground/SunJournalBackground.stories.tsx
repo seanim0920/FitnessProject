@@ -6,12 +6,21 @@ import {
   MID_DAY_SKY_GRADIENT,
   MID_DAY_SUN_GRADIENT,
   MORNING_DAY_SUN_GRADIENT,
+  MORNING_SKY_GRADIENT,
   SUNRISE_SKY_GRADIENT,
+  SUNSET_SKY_GRADIENT,
+  SUNSET_SUN_GRADIENT,
   SunBackground,
   SunBackgroundDrawing,
   sunRelativePosition
 } from "@journaling/SunBackground"
-import { useSharedValue } from "react-native-reanimated"
+import {
+  useDerivedValue,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming
+} from "react-native-reanimated"
 import {
   SafeAreaProvider,
   useSafeAreaInsets
@@ -81,20 +90,20 @@ const BACKGROUND: SunBackground = {
 const CanvasView = () => {
   const [size, setSize] = useState<SkSize>({ width: 0, height: 0 })
   const insets = useSafeAreaInsets()
-  const [backgroundX, setBackgroundX] = useState(0)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setBackgroundX((x) => (x >= 1 ? 0 : x + 0.1))
-    }, 500)
-    return () => clearInterval(interval)
-  }, [])
+  const [backgroundX, setBackgroundX] = useState(0.3)
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     setBackgroundX((x) => (x >= 1 ? 0 : x + 0.1))
+  //   }, 500)
+  //   return () => clearInterval(interval)
+  // }, [])
   const background = useMemo(
     () => ({
       sun: {
         relativePosition: sunRelativePosition(backgroundX),
-        gradient: MORNING_DAY_SUN_GRADIENT
+        gradient: MID_DAY_SUN_GRADIENT
       },
-      skyGradient: SUNRISE_SKY_GRADIENT,
+      skyGradient: MORNING_SKY_GRADIENT,
       clouds: CLOUDS
     }),
     [backgroundX]
