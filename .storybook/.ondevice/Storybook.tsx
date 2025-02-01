@@ -1,9 +1,9 @@
 import React, { useState } from "react"
 
-import DraggableViewMeta, { Basic as DraggableView } from "../components/DraggableView/DraggableView.stories";
+import DraggableViewMeta, {
+  Basic as DraggableView
+} from "../components/DraggableView/DraggableView.stories"
 
-import { FlatList, Text, TouchableOpacity, View } from "react-native";
-import { useAppFonts } from "../../lib/Fonts";
 import SunJournalBackgroundMeta, {
   Basic as SunJournalBackground
 } from "../components/SunJournalBackground/SunJournalBackground.stories"
