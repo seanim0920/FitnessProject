@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 
+import DraggableViewMeta, { Basic as DraggableView } from "../components/DraggableView/DraggableView.stories";
+
 import { FlatList, Text, TouchableOpacity, View } from "react-native";
 import { useAppFonts } from "../../lib/Fonts";
 
@@ -94,6 +96,12 @@ addLogHandler(
 
 // Create an array of stories
 const stories = [
+  {
+    name: DraggableViewMeta.title,
+    component: DraggableView,
+    args: DraggableViewMeta.args
+  },
+
   {
     name: DragAndDropMeta.title,
     component: DragAndDrop,
