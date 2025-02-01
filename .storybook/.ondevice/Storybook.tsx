@@ -1,5 +1,9 @@
 import React, { useState } from "react"
 
+import DraggableViewMeta, { Basic as DraggableView } from "../components/DraggableView/DraggableView.stories";
+
+import { FlatList, Text, TouchableOpacity, View } from "react-native";
+import { useAppFonts } from "../../lib/Fonts";
 import SunJournalBackgroundMeta, {
   Basic as SunJournalBackground
 } from "../components/SunJournalBackground/SunJournalBackground.stories"
@@ -109,6 +113,11 @@ addLogHandler(
 
 // Create an array of stories
 const stories = [
+  {
+    name: DraggableViewMeta.title,
+    component: DraggableView,
+    args: DraggableViewMeta.args
+  },
   {
     name: SunJournalBackgroundMeta.title,
     component: SunJournalBackground,
