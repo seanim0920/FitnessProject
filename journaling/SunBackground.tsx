@@ -70,6 +70,12 @@ export const MID_DAY_SKY_GRADIENT: SkyGradient = [
   "#3183FD"
 ]
 
+export const AFTERNOON_SKY_GRADIENT: SkyGradient = [
+  "#438AEF",
+  "#266DCD",
+  "#0A50AB"
+]
+
 export const MORNING_SKY_GRADIENT: SkyGradient = [
   "#17D0F9",
   "#24B7FB",

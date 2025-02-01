@@ -3,6 +3,7 @@ import { View, Text } from "react-native"
 import { StoryMeta } from "storybook/HelperTypes"
 import { Canvas, SkSize } from "@shopify/react-native-skia"
 import {
+  AFTERNOON_SKY_GRADIENT,
   MID_DAY_SKY_GRADIENT,
   MID_DAY_SUN_GRADIENT,
   MORNING_DAY_SUN_GRADIENT,
@@ -103,7 +104,7 @@ const CanvasView = () => {
         relativePosition: sunRelativePosition(backgroundX),
         gradient: MID_DAY_SUN_GRADIENT
       },
-      skyGradient: MORNING_SKY_GRADIENT,
+      skyGradient: AFTERNOON_SKY_GRADIENT,
       clouds: CLOUDS
     }),
     [backgroundX]
