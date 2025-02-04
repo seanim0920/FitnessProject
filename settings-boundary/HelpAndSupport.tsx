@@ -226,10 +226,7 @@ export const useHelpAndSupportSettings = (
                 composeEmail,
                 env.userID,
                 deleteTempIDFile,
-                [
-                  await createTempIDFile(env.userID),
-                  await compileLogs()
-                ].filter(Boolean) as string[]
+                [await createTempIDFile(env.userID), await compileLogs()]
               )
             } catch {
               presentAlert(

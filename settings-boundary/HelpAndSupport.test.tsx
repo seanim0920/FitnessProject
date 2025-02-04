@@ -161,7 +161,7 @@ describe("HelpAndSupportSettings tests", () => {
       )
 
       expect(composeEmail).toHaveBeenCalledWith(
-        HELP_AND_SUPPORT_EMAILS.questionSubmitted(AlphaUserMocks.TheDarkLord.id)
+        HELP_AND_SUPPORT_EMAILS.questionSubmitted()
       )
     })
 
