@@ -69,10 +69,7 @@ export const clientSideEventFromResponse = (response: EventResponse) => ({
 export const eventSecondsToStart = ({
   secondsToStart,
   clientReceivedTime
-}: {
-  secondsToStart: number
-  clientReceivedTime: Date
-}) => {
+}: Pick<ClientSideEventTime, "secondsToStart" | "clientReceivedTime">) => {
   const offset = now().diff(dayjs(clientReceivedTime))
   return secondsToStart - Math.round(offset / 1000)
 }
