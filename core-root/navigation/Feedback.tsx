@@ -1,6 +1,9 @@
 import { useBackButton } from "@components/Navigation"
-import { WithAlphaRegistrationProps } from "@core-root/AlphaRegister"
-import { StaticScreenProps, useNavigation } from "@react-navigation/native"
+import {
+  WithAlphaRegistrationProps,
+  withAlphaRegistration
+} from "@core-root/AlphaRegister"
+import { StaticScreenProps } from "@react-navigation/native"
 import {
   HelpAndSupportView,
   useHelpAndSupportSettings
@@ -21,15 +24,13 @@ type RoutableHelpAndSupportScreenValues = {
 }
 
 type HelpAndSupportScreenProps = WithAlphaRegistrationProps<
-  StaticScreenProps<RoutableHelpAndSupportScreenValues>
+  StaticScreenProps<{}>
 >
 
-const HelpAndSupportScreen = ({ route }: HelpAndSupportScreenProps) => {
-  const navigation = useNavigation()
-  useBackButton()
-  const state = useHelpAndSupportSettings({
-    userID: route.params.id
-  })
-
-  return <HelpAndSupportView state={state}></HelpAndSupportView>
-}
+const HelpAndSupportScreen = withAlphaRegistration(
+  ({ session }: HelpAndSupportScreenProps) => {
+    useBackButton()
+    const state = useHelpAndSupportSettings({ userID: session.id })
+    return <HelpAndSupportView state={state} />
+  }
+)

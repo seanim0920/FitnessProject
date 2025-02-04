@@ -33,18 +33,20 @@ const ProfileScreen = withAlphaRegistration(
   ({ session, route }: ProfileScreenProps) => {
     const navigation = useNavigation()
     useBackButton()
-    useEffect(() => {
-      navigation.setOptions({
-        headerRight: () => (
-          <TouchableIonicon
-            onPress={async () =>
-              navigation.navigate("helpAndSupport", { id: session.id })
-            }
-            icon={{ name: "settings" }}
-          />
-        )
-      })
-    }, [navigation, session])
+    if (session.id === route.params.id) {
+      useEffect(() => {
+        navigation.setOptions({
+          headerRight: () => (
+            <TouchableIonicon
+              onPress={() =>
+                navigation.navigate("helpAndSupport", { id: session.id })
+              }
+              icon={{ name: "settings" }}
+            />
+          )
+        })
+      }, [navigation, session])
+    }
     return (
       <UserProfileView
         userInfoState={useUserProfile({ userId: route.params.id.toString() })}
