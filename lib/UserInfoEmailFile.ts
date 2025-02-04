@@ -1,7 +1,6 @@
 import {
   cacheDirectory,
   deleteAsync,
-  readAsStringAsync,
   writeAsStringAsync
 } from "expo-file-system"
 import { UserID } from "TiFShared/domain-models/User"
@@ -9,7 +8,7 @@ import { featureContext } from "./FeatureContext"
 
 export interface UserInfoEmailFile {
   createTempIDFile: (id: UserID) => Promise<string | undefined>
-  deleteTempIDFile: (id: UserID) => Promise<void>
+  deleteTempIDFile: () => Promise<void>
 }
 
 const createTempUserFile = async (id: UserID) => {
@@ -24,12 +23,9 @@ const createTempUserFile = async (id: UserID) => {
   }
 }
 
-const deleteTempUserFile = async (id: UserID) => {
+const deleteTempUserFile = async () => {
   const fileURI = cacheDirectory + "userID.txt"
-  const content = await readAsStringAsync(fileURI)
-  if (content === `UserID: ${id}`) {
-    await deleteAsync(fileURI)
-  }
+  await deleteAsync(fileURI)
 }
 
 export const UserInfoEmailFileFeature = featureContext({

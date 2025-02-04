@@ -15,6 +15,7 @@ import {
 describe("HelpAndSupportSettings tests", () => {
   describe("UseHelpAndSupportSettings tests", () => {
     const TEST_COMPILE_LOGS_URI = "test/logs.zip"
+    const TEST_USER_ID_FILE_URI = "userURI"
     const { alertPresentationSpy, tapAlertButton } = captureAlerts()
     const createTempIDFile = jest.fn()
     const deleteTempIDFile = jest.fn()
@@ -43,10 +44,7 @@ describe("HelpAndSupportSettings tests", () => {
         )
       })
       expect(composeEmail).toHaveBeenCalledWith(
-        HELP_AND_SUPPORT_EMAILS.feedbackSubmitted(
-          AlphaUserMocks.TheDarkLord.id,
-          "userURI"
-        )
+        HELP_AND_SUPPORT_EMAILS.feedbackSubmitted(TEST_USER_ID_FILE_URI)
       )
     })
 
@@ -71,9 +69,7 @@ describe("HelpAndSupportSettings tests", () => {
         )
       )
       expect(composeEmail).toHaveBeenCalledWith(
-        HELP_AND_SUPPORT_EMAILS.bugReported(AlphaUserMocks.TheDarkLord.id, [
-          "userURI"
-        ])
+        HELP_AND_SUPPORT_EMAILS.bugReported([TEST_USER_ID_FILE_URI])
       )
     })
 
@@ -88,8 +84,8 @@ describe("HelpAndSupportSettings tests", () => {
         )
       )
       expect(composeEmail).toHaveBeenCalledWith(
-        HELP_AND_SUPPORT_EMAILS.bugReported(AlphaUserMocks.TheDarkLord.id, [
-          "userURI",
+        HELP_AND_SUPPORT_EMAILS.bugReported([
+          TEST_USER_ID_FILE_URI,
           TEST_COMPILE_LOGS_URI
         ])
       )
@@ -112,9 +108,7 @@ describe("HelpAndSupportSettings tests", () => {
         )
       )
       expect(composeEmail).toHaveBeenCalledWith(
-        HELP_AND_SUPPORT_EMAILS.bugReported(AlphaUserMocks.TheDarkLord.id, [
-          "userURI"
-        ])
+        HELP_AND_SUPPORT_EMAILS.bugReported([TEST_USER_ID_FILE_URI])
       )
     })
 
@@ -130,10 +124,7 @@ describe("HelpAndSupportSettings tests", () => {
       )
 
       expect(composeEmail).toHaveBeenCalledWith(
-        HELP_AND_SUPPORT_EMAILS.questionSubmitted(
-          AlphaUserMocks.TheDarkLord.id,
-          "userURI"
-        )
+        HELP_AND_SUPPORT_EMAILS.questionSubmitted(TEST_USER_ID_FILE_URI)
       )
     })
 
@@ -176,7 +167,7 @@ describe("HelpAndSupportSettings tests", () => {
 
     const renderSuccessfulEmailCompositionFlow = async () => {
       composeEmail.mockResolvedValue("success")
-      createTempIDFile.mockResolvedValue("userURI")
+      createTempIDFile.mockResolvedValue(TEST_USER_ID_FILE_URI)
       isShowingContactSection.mockResolvedValueOnce(true)
       const { result } = renderUseHelpAndSupportSettings()
       await waitFor(() =>

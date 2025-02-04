@@ -42,7 +42,7 @@ const emailSection = (name: string) => {
 }
 
 export const HELP_AND_SUPPORT_EMAILS = {
-  feedbackSubmitted: (userID?: UserID, tempUserIDURI?: string) =>
+  feedbackSubmitted: (tempUserIDURI?: string) =>
     email(
       "App Feedback",
       tempUserIDURI ? [tempUserIDURI] : [],
@@ -58,7 +58,7 @@ export const HELP_AND_SUPPORT_EMAILS = {
         "📸 Provide any supplementary information or files related to the feedback above. (Optional)"
       )
     ),
-  bugReported: (userID?: UserID, attachments?: string[]) => {
+  bugReported: (attachments?: string[]) => {
     return email(
       "App Bug Report",
       attachments || [],
@@ -74,7 +74,7 @@ export const HELP_AND_SUPPORT_EMAILS = {
       )
     )
   },
-  questionSubmitted: (userID?: UserID, tempUserIDURI?: string) =>
+  questionSubmitted: (tempUserIDURI?: string) =>
     email(
       "App Question",
       tempUserIDURI ? [tempUserIDURI] : [],
@@ -211,12 +211,11 @@ export const useHelpAndSupportSettings = (
       await tryComposeEmail(
         composeEmail,
         HELP_AND_SUPPORT_EMAILS.feedbackSubmitted(
-          env.userID,
           await createTempIDFile(env.userID)
         ),
+        deleteTempIDFile,
         "submitFeedback"
       )
-      await deleteTempIDFile(env.userID)
     },
     bugReported: () => {
       presentAlert(
@@ -226,6 +225,7 @@ export const useHelpAndSupportSettings = (
               await tryComposeBugReportEmail(
                 composeEmail,
                 env.userID,
+                deleteTempIDFile,
                 [
                   await createTempIDFile(env.userID),
                   await compileLogs()
@@ -237,22 +237,21 @@ export const useHelpAndSupportSettings = (
                   await tryComposeBugReportEmail(
                     composeEmail,
                     env.userID,
-                    [await createTempIDFile(env.userID)].filter(
-                      Boolean
-                    ) as string[]
+                    deleteTempIDFile,
+                    [await createTempIDFile(env.userID)]
                   )
                 })
               )
             }
-            await deleteTempIDFile(env.userID)
+            await deleteTempIDFile()
           },
           async () => {
             await tryComposeBugReportEmail(
               composeEmail,
               env.userID,
-              [await createTempIDFile(env.userID)].filter(Boolean) as string[]
+              deleteTempIDFile,
+              [await createTempIDFile(env.userID)]
             )
-            await deleteTempIDFile(env.userID)
           },
           () => open(COMPILING_LOGS_INFO_URL)
         )
@@ -262,12 +261,11 @@ export const useHelpAndSupportSettings = (
       await tryComposeEmail(
         composeEmail,
         HELP_AND_SUPPORT_EMAILS.questionSubmitted(
-          env.userID,
           await createTempIDFile(env.userID)
         ),
+        deleteTempIDFile,
         "submitQuestion"
       )
-      await deleteTempIDFile(env.userID)
     }
   }
 }
@@ -275,11 +273,15 @@ export const useHelpAndSupportSettings = (
 const tryComposeBugReportEmail = async (
   composeEmail: (email: EmailTemplate) => Promise<EmailCompositionResult>,
   userID: UserID,
-  attachments?: string[]
+  deleteTempIDFile: () => Promise<void>,
+  attachments?: (string | undefined)[]
 ) => {
   await tryComposeEmail(
     composeEmail,
-    HELP_AND_SUPPORT_EMAILS.bugReported(userID, attachments),
+    HELP_AND_SUPPORT_EMAILS.bugReported(
+      attachments ? (attachments.filter(Boolean) as string[]) : undefined
+    ),
+    deleteTempIDFile,
     "reportBug"
   )
 }
@@ -287,6 +289,7 @@ const tryComposeBugReportEmail = async (
 const tryComposeEmail = async (
   composeEmail: (email: EmailTemplate) => Promise<EmailCompositionResult>,
   emailTemplate: EmailTemplate,
+  deleteTempIDFile: () => Promise<void>,
   alertsKey: keyof typeof HELP_AND_SUPPORT_EMAIL_SUCCESS_ALERTS
 ) => {
   try {
@@ -297,6 +300,7 @@ const tryComposeEmail = async (
   } catch {
     presentAlert(HELP_AND_SUPPORT_EMAIL_ERROR_ALERTS[alertsKey])
   }
+  await deleteTempIDFile()
 }
 
 type PresetSectionProps = {

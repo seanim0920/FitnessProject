@@ -33,8 +33,9 @@ const ProfileScreen = withAlphaRegistration(
   ({ session, route }: ProfileScreenProps) => {
     const navigation = useNavigation()
     useBackButton()
-    if (session.id === route.params.id) {
-      useEffect(() => {
+
+    useEffect(() => {
+      if (session.id === route.params.id) {
         navigation.setOptions({
           headerRight: () => (
             <TouchableIonicon
@@ -45,8 +46,9 @@ const ProfileScreen = withAlphaRegistration(
             />
           )
         })
-      }, [navigation, session])
-    }
+      }
+    }, [navigation, route.params.id, session])
+
     return (
       <UserProfileView
         userInfoState={useUserProfile({ userId: route.params.id.toString() })}
