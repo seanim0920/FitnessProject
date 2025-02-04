@@ -1,4 +1,5 @@
 import { EventResponse } from "TiFShared/api/models/Event"
+import { dayjs, now } from "TiFShared/lib/Dayjs"
 import { Reassign } from "TiFShared/lib/Types/HelperTypes"
 
 /**
@@ -64,3 +65,14 @@ export const clientSideEventFromResponse = (response: EventResponse) => ({
   ...response,
   time: { ...response.time, clientReceivedTime: new Date() }
 })
+
+export const eventSecondsToStart = ({
+  secondsToStart,
+  clientReceivedTime
+}: {
+  secondsToStart: number
+  clientReceivedTime: Date
+}) => {
+  const offset = now().diff(dayjs(clientReceivedTime))
+  return secondsToStart - Math.round(offset / 1000)
+}
