@@ -4,6 +4,7 @@ import { clientSideEventFromResponse } from "@event/ClientSideEvent"
 import { LiveEventsFeature, LiveEventsStore } from "@event/LiveEvents"
 import { eventsByRegion } from "@explore-events-boundary"
 import { tiFQueryClient } from "@lib/ReactQuery"
+import { sleep } from "@lib/utils/DelayData"
 import { SettingsProvider } from "@settings-storage/Hooks"
 import { SQLiteLocalSettingsStorage } from "@settings-storage/LocalSettings"
 import { PersistentSettingsStores } from "@settings-storage/PersistentStores"
@@ -40,6 +41,7 @@ const store = new LiveEventsStore(tiFQueryClient, async () => {
       secondsToStart: -100
     }
   })
+  await sleep(3000)
   return {
     ongoing: [ongoingEvent],
     startingSoon: []

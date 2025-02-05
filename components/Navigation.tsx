@@ -9,7 +9,7 @@ import {
   StackNavigationProp,
   createStackNavigator
 } from "@react-navigation/stack"
-import React, { useEffect, useRef } from "react"
+import React, { createContext, useContext, useEffect, useRef } from "react"
 import { StyleProp, StyleSheet, ViewStyle } from "react-native"
 import { EventID } from "TiFShared/domain-models/Event"
 import { UserHandle, UserID } from "TiFShared/domain-models/User"
@@ -32,11 +32,24 @@ export type UseNavigationReturn = Omit<
   getState(): NavigationState | undefined
 }
 
+export const NavigationWorkaroundContext = createContext<
+  UseNavigationReturn | undefined
+>(undefined)
+
 /**
  * Returns an object of functions to navigate to essential app screens.
  */
 export const useCoreNavigation = () => {
-  const navigation = useNavigation<UseNavigationReturn>()
+  // NB: For some reason, the react navigation context can get lost when rendering elements in a
+  // bottom sheet modal, so we'll have to pass a navigation object from the outside.
+  const reactNavigation = useReactNavigationIfAvailable()
+  const workaroundNavigation = useContext(NavigationWorkaroundContext)
+  const navigation = workaroundNavigation ?? reactNavigation
+  if (!navigation) {
+    throw new Error(
+      "Couldn't find a navigation object. Is your component inside NavigationContainer?"
+    )
+  }
   return {
     presentEditEvent: (edit: EditEventFormValues, id?: EventID) => {
       const formValues = toRouteableEditFormValues(edit)
@@ -68,6 +81,14 @@ export const useCoreNavigation = () => {
     pushAttendeesList: (id: EventID) => {
       navigation.navigate("eventAttendeesList", { id })
     }
+  }
+}
+
+const useReactNavigationIfAvailable = () => {
+  try {
+    return useNavigation<UseNavigationReturn>()
+  } catch {
+    return undefined
   }
 }
 

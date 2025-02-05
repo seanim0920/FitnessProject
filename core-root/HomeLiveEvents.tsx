@@ -1,4 +1,8 @@
 import { TiFBottomSheet } from "@components/BottomSheet"
+import {
+  NavigationWorkaroundContext,
+  UseNavigationReturn
+} from "@components/Navigation"
 import { Title } from "@components/Text"
 import { IoniconCloseButton } from "@components/common/Icons"
 import { ClientSideEvent, eventSecondsToStart } from "@event/ClientSideEvent"
@@ -13,10 +17,11 @@ import {
   BottomSheetHandle,
   BottomSheetHandleProps
 } from "@gorhom/bottom-sheet"
+import { NavigationContainer, useNavigation } from "@react-navigation/native"
 import { UserID } from "TiFShared/domain-models/User"
 import dayjs from "dayjs"
 import { useCallback, useEffect, useState } from "react"
-import { ViewStyle, StyleProp, View, StyleSheet } from "react-native"
+import { ViewStyle, StyleProp, View, StyleSheet, FlatList } from "react-native"
 
 const TWO_HOURS = dayjs.duration(2, "hours").asSeconds()
 
@@ -34,7 +39,7 @@ export const useHomeLiveEvents = (id: UserID) => {
       (e) => eventSecondsToStart(e.time) <= TWO_HOURS
     )
     return [...events.ongoing, ...startingSoon]
-  }) as ClientSideEvent[]
+  }) as ClientSideEvent[] | undefined
   return {
     modalEvents: liveEvents,
     modalClosed: useCallback(() => setIsModalClosed(true), [])
@@ -50,10 +55,11 @@ const SNAP_POINTS = ["50%", "75%"]
 
 export const HomeLiveEventsView = ({ id, style }: HomeLiveEventsProps) => {
   const state = useHomeLiveEvents(id)
+  const navigation = useNavigation<UseNavigationReturn>()
   return (
     <TiFBottomSheet
       sizing={{ snapPoints: SNAP_POINTS }}
-      item={state.modalEvents}
+      isPresented={!!state.modalEvents}
       HandleView={useCallback(
         (props: BottomSheetHandleProps) => (
           <HandleView {...props} onCloseTapped={state.modalClosed} />
@@ -63,15 +69,15 @@ export const HomeLiveEventsView = ({ id, style }: HomeLiveEventsProps) => {
       onDismiss={state.modalClosed}
       style={style}
     >
-      {(events) => (
+      <NavigationWorkaroundContext.Provider value={navigation}>
         <BottomSheetFlatList
           keyExtractor={keyExtractor}
           renderItem={({ item }) => (
             <EventCard event={item} style={styles.eventCard} />
           )}
-          data={events}
+          data={state.modalEvents ?? []}
         />
-      )}
+      </NavigationWorkaroundContext.Provider>
     </TiFBottomSheet>
   )
 }
