@@ -13,6 +13,27 @@ export type ClientSideEventTime = EventResponse["time"] & {
   clientReceivedTime: Date
 }
 
+export type ClientSideEventSecondsToStartArgs = Pick<
+  ClientSideEventTime,
+  "secondsToStart" | "clientReceivedTime"
+>
+
+export const eventSecondsToStart = ({
+  secondsToStart,
+  clientReceivedTime
+}: ClientSideEventSecondsToStartArgs) => {
+  const offset = now().diff(dayjs(clientReceivedTime))
+  return secondsToStart - Math.round(offset / 1000)
+}
+
+export const hasEventStarted = (args: ClientSideEventSecondsToStartArgs) => {
+  return eventSecondsToStart(args) <= 0
+}
+
+export const hasEventEnded = (time: ClientSideEventTime) => {
+  return -eventSecondsToStart(time) >= time.dateRange.diff.seconds
+}
+
 /**
  * The main type for representing an event throughout the app.
  *
@@ -65,11 +86,3 @@ export const clientSideEventFromResponse = (response: EventResponse) => ({
   ...response,
   time: { ...response.time, clientReceivedTime: new Date() }
 })
-
-export const eventSecondsToStart = ({
-  secondsToStart,
-  clientReceivedTime
-}: Pick<ClientSideEventTime, "secondsToStart" | "clientReceivedTime">) => {
-  const offset = now().diff(dayjs(clientReceivedTime))
-  return secondsToStart - Math.round(offset / 1000)
-}
