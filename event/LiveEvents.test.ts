@@ -1,5 +1,6 @@
 import { createTestQueryClient } from "@test-helpers/ReactQuery"
 import {
+  EMPTY_LIVE_EVENTS,
   LIVE_EVENT_SECONDS_TO_START,
   LiveEventsStore,
   liveEvents
@@ -102,7 +103,7 @@ describe("LiveEvents tests", () => {
       const callback = jest.fn()
       const store = testStore()
       store.subscribe(callback)
-      expect(callback).toHaveBeenCalledWith({ ongoing: [], startingSoon: [] })
+      expect(callback).toHaveBeenCalledWith(EMPTY_LIVE_EVENTS)
       expect(callback).toHaveBeenCalledTimes(1)
     })
 
@@ -186,7 +187,7 @@ describe("LiveEvents tests", () => {
 
       jest.advanceTimersByTime(ROTATION_MILLIS * 2)
 
-      expect(store.current).toEqual({ ongoing: [], startingSoon: [] })
+      expect(store.current).toEqual(EMPTY_LIVE_EVENTS)
       expect(callback).toHaveBeenNthCalledWith(3, {
         ongoing: [],
         startingSoon: []

@@ -15,13 +15,13 @@ import { FontScaleFactors } from "@lib/Fonts"
 import { ProfileCircleView } from "@components/profileImageComponents/ProfileCircle"
 import { IfAuthenticated } from "@user/Session"
 import { AppStyles } from "@lib/AppColorStyle"
-import { useRef, useState, useContext } from "react"
+import { useRef, useContext } from "react"
 import { StyleProp, ViewStyle, View, Pressable, StyleSheet } from "react-native"
 import PagerView from "react-native-pager-view"
 import { TiFContext } from "./Context"
 import { useCoreNavigation } from "@components/Navigation"
 import { defaultEditFormValues } from "@event/EditFormValues"
-import { atom, useAtom, useAtomValue, useSetAtom } from "jotai"
+import { atom, useAtomValue, useSetAtom } from "jotai"
 
 export type HomeProps = {
   style?: StyleProp<ViewStyle>

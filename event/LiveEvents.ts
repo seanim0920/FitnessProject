@@ -6,8 +6,6 @@ import { QueryClient, QueryObserver } from "@tanstack/react-query"
 import { TiFAPI } from "TiFShared/api"
 import {
   ClientSideEvent,
-  hasEventEnded,
-  hasEventTimeStarted,
   clientSideEventFromResponse,
   isEventOngoing,
   canEventStartInTheFuture
@@ -39,6 +37,11 @@ export type LiveEvents = {
    */
   startingSoon: ClientSideEvent[]
 }
+
+export const EMPTY_LIVE_EVENTS = {
+  ongoing: [],
+  startingSoon: []
+} as Readonly<LiveEvents>
 
 const groupIntoLiveEvents = (events: ClientSideEvent[]) => {
   const ongoing = events.filter(isEventOngoing)
@@ -108,7 +111,7 @@ export class LiveEventsStore {
     this.queryClient = queryClient
     this.liveEvents = events
     this.rotationMillis = rotationMillis
-    this._current = { ongoing: [], startingSoon: [] }
+    this._current = EMPTY_LIVE_EVENTS
   }
 
   subscribe(fn: (events: LiveEvents) => void): LiveEventsUnsubscribe {
