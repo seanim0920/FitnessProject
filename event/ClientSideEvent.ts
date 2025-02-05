@@ -13,25 +13,24 @@ export type ClientSideEventTime = EventResponse["time"] & {
   clientReceivedTime: Date
 }
 
-export type ClientSideEventSecondsToStartArgs = Pick<
-  ClientSideEventTime,
-  "secondsToStart" | "clientReceivedTime"
->
-
+/**
+ * Returns the amount of seconds before an event starts based off its client received time.
+ */
 export const eventSecondsToStart = ({
   secondsToStart,
   clientReceivedTime
-}: ClientSideEventSecondsToStartArgs) => {
+}: Pick<ClientSideEventTime, "secondsToStart" | "clientReceivedTime">) => {
   const offset = now().diff(dayjs(clientReceivedTime))
   return secondsToStart - Math.round(offset / 1000)
 }
 
-export const hasEventStarted = (args: ClientSideEventSecondsToStartArgs) => {
-  return eventSecondsToStart(args) <= 0
-}
-
-export const hasEventEnded = (time: ClientSideEventTime) => {
-  return -eventSecondsToStart(time) >= time.dateRange.diff.seconds
+/**
+ * Whether or not the time of an event has indicated that it has started.
+ */
+export const hasEventTimeStarted = (
+  time: Pick<ClientSideEventTime, "secondsToStart" | "clientReceivedTime">
+) => {
+  return eventSecondsToStart(time) <= 0
 }
 
 /**
@@ -86,3 +85,11 @@ export const clientSideEventFromResponse = (response: EventResponse) => ({
   ...response,
   time: { ...response.time, clientReceivedTime: new Date() }
 })
+
+/**
+ * Returns true for whether or not this event has ended.
+ */
+export const hasEventEnded = (e: ClientSideEvent) => {
+  if (e.endedDateTime) return true
+  return -eventSecondsToStart(e.time) >= e.time.dateRange.diff.seconds
+}

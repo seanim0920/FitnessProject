@@ -1,15 +1,69 @@
 import { createTestQueryClient } from "@test-helpers/ReactQuery"
-import { LiveEventsStore } from "./LiveEvents"
+import {
+  LIVE_EVENT_SECONDS_TO_START,
+  LiveEventsStore,
+  liveEvents
+} from "./LiveEvents"
 import { AlphaUserMocks } from "@user/alpha/MockData"
 import { clientSideEventFromResponse } from "./ClientSideEvent"
 import { EventMocks } from "@event-details-boundary/MockData"
 import { waitFor } from "@testing-library/react-native"
 import { fakeTimers } from "@test-helpers/Timers"
 import { dateRange } from "TiFShared/domain-models/FixedDateRange"
+import { TiFAPI } from "TiFShared/api"
+import { mockTiFServer } from "TiFShared/test-helpers/mockAPIServer"
 
 const TEST_USER_ID = AlphaUserMocks.TheDarkLord.id
 
 describe("LiveEvents tests", () => {
+  describe("FetchLiveEvents tests", () => {
+    it("should split events by whether or not the are ongoing or starting soon", async () => {
+      const ongoingEvent = {
+        ...EventMocks.MockSingleAttendeeResponse,
+        time: {
+          ...EventMocks.MockSingleAttendeeResponse.time,
+          secondsToStart: -190
+        },
+        id: 10
+      }
+      const doneEvent = {
+        ...EventMocks.MockSingleAttendeeResponse,
+        endedDateTime: new Date(),
+        id: 9
+      }
+      const startingSoonEvent = {
+        ...EventMocks.MockSingleAttendeeResponse,
+        time: {
+          ...EventMocks.MockSingleAttendeeResponse.time,
+          secondsToStart: 1800
+        },
+        id: 11
+      }
+      mockTiFServer({
+        upcomingEvents: {
+          expectedRequest: {
+            query: {
+              userId: TEST_USER_ID,
+              maxSecondsToStart: `${LIVE_EVENT_SECONDS_TO_START}`
+            }
+          },
+          mockResponse: {
+            status: 200,
+            data: { events: [ongoingEvent, doneEvent, startingSoonEvent] }
+          }
+        }
+      })
+      const events = await liveEvents(
+        TEST_USER_ID,
+        TiFAPI.testAuthenticatedInstance
+      )
+      expect(events.startingSoon.map((e) => e.id)).toEqual([
+        startingSoonEvent.id
+      ])
+      expect(events.ongoing.map((e) => e.id)).toEqual([ongoingEvent.id])
+    })
+  })
+
   describe("LiveEventsStore tests", () => {
     const liveEvents = jest.fn()
 

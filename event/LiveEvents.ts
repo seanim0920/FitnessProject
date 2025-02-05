@@ -7,7 +7,8 @@ import { TiFAPI } from "TiFShared/api"
 import {
   ClientSideEvent,
   hasEventEnded,
-  hasEventStarted
+  hasEventTimeStarted,
+  clientSideEventFromResponse
 } from "./ClientSideEvent"
 import { UserID } from "TiFShared/domain-models/User"
 import { tiFQueryClient } from "@lib/ReactQuery"
@@ -22,25 +23,29 @@ import {
 } from "@lib/AutocorrectingInterval"
 import { logger } from "TiFShared/logging"
 
+/**
+ * Events that the app is watching for their start times.
+ */
 export type LiveEvents = {
+  /**
+   * A list of ongoing events that the user is attending.
+   */
   ongoing: ClientSideEvent[]
+
+  /**
+   * A list of events that are starting within the next 4 hours.
+   */
   startingSoon: ClientSideEvent[]
 }
 
-const shiftEvents = (events: LiveEvents) => {
-  const newlyOngoingEvents = events.startingSoon.filter((e) => {
-    return hasEventStarted(e.time)
-  })
-  const stillOngoingEvents = events.ongoing.filter(
-    (e) => !hasEventEnded(e.time)
+const groupIntoLiveEvents = (events: ClientSideEvent[]) => {
+  const ongoing = events.filter(
+    (e) => hasEventTimeStarted(e.time) && !hasEventEnded(e)
   )
-  const startingSoonEvents = events.startingSoon.filter((e) => {
-    return !hasEventStarted(e.time)
-  })
-  return {
-    ongoing: [...stillOngoingEvents, ...newlyOngoingEvents],
-    startingSoon: startingSoonEvents
-  }
+  const startingSoon = events.filter(
+    (e) => !hasEventTimeStarted(e.time) && !hasEventEnded(e)
+  )
+  return { ongoing, startingSoon }
 }
 
 const isStructurallySameEvents = (e1: LiveEvents, e2: LiveEvents) => {
@@ -59,11 +64,22 @@ export const LIVE_EVENT_SECONDS_TO_START = dayjs
   .duration(4, "hours")
   .asSeconds()
 
+/**
+ *  Fetches all live events for a specified user id.
+ */
 export const liveEvents = async (
   id: UserID,
   api: TiFAPI = TiFAPI.productionInstance
 ): Promise<LiveEvents> => {
-  return { ongoing: [], startingSoon: [] }
+  const resp = await api.upcomingEvents({
+    query: { userId: id, maxSecondsToStart: LIVE_EVENT_SECONDS_TO_START }
+  })
+  if (resp.status !== 200) {
+    throw new Error(
+      `Failed to load live events for user with id ${id}, server responded with ${resp.status}.`
+    )
+  }
+  return groupIntoLiveEvents(resp.data.events.map(clientSideEventFromResponse))
 }
 
 const liveEventsQueryKey = (id: UserID) => ["live-events", id]
@@ -72,6 +88,9 @@ export type LiveEventsUnsubscribe = CallbackCollectionUnsubscribe
 
 const log = logger("live.events.store")
 
+/**
+ * A store for observing the {@link LiveEvents} for a user.
+ */
 export class LiveEventsStore {
   private readonly subscribers = new CallbackCollection()
   private readonly queryClient: QueryClient
@@ -100,6 +119,9 @@ export class LiveEventsStore {
     return unsub
   }
 
+  /**
+   * Begins observing the {@link LiveEvents} for the specified user.
+   */
   beginObserving(id: UserID): LiveEventsUnsubscribe {
     const observer = new QueryObserver(this.queryClient, {
       queryKey: liveEventsQueryKey(id),
@@ -117,7 +139,10 @@ export class LiveEventsStore {
       log.info("Successfully fetched live events.", { userId: id })
     })
     const interval = setAutocorrectingInterval(() => {
-      const newEvents = shiftEvents(this.current)
+      const newEvents = groupIntoLiveEvents([
+        ...this.current.ongoing,
+        ...this.current.startingSoon
+      ])
       if (!isStructurallySameEvents(this.current, newEvents)) {
         log.info("Shifted Live Events", { userId: id })
         this.updateCurrent(newEvents)
@@ -139,6 +164,11 @@ export const LiveEventsFeature = featureContext({
   store: new LiveEventsStore()
 })
 
+/**
+ * The {@link LiveEvents} for the current user.
+ *
+ * @param selector A selector to select which events to listen for.
+ */
 export const useLiveEvents = <T>(selector: (liveEvents: LiveEvents) => T) => {
   const { store } = LiveEventsFeature.useContext()
   return useSyncExternalStoreWithSelector(
