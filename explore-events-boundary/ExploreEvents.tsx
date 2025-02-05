@@ -177,6 +177,7 @@ const useExploreEventsQuery = (
 
 export type ExploreEventsProps = {
   region?: ExploreEventsRegion
+  ongoingEvents: ClientSideEvent[]
   data: ExploreEventsData
   onRegionUpdated: (region: ExploreEventsRegion) => void
   style?: StyleProp<ViewStyle>
@@ -187,6 +188,7 @@ export type ExploreEventsProps = {
  */
 export const ExploreEventsView = ({
   region,
+  ongoingEvents,
   data,
   onRegionUpdated,
   style
@@ -207,7 +209,7 @@ export const ExploreEventsView = ({
         <Water />
       )}
       <ExploreEventsBottomSheet
-        events={data.events ?? []}
+        events={ongoingEvents.concat(data.events ?? [])}
         HeaderComponent={
           data.status !== "pending" ? NearbyHeader : FindingHeader
         }

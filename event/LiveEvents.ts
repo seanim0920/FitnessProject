@@ -43,6 +43,13 @@ export const EMPTY_LIVE_EVENTS = {
   startingSoon: []
 } as Readonly<LiveEvents>
 
+export const isEmptyLiveEvents = (events: LiveEvents) => {
+  return (
+    shallowEquals(events.ongoing, EMPTY_LIVE_EVENTS.ongoing) &&
+    shallowEquals(events.startingSoon, EMPTY_LIVE_EVENTS.startingSoon)
+  )
+}
+
 const groupIntoLiveEvents = (events: ClientSideEvent[]) => {
   const ongoing = events.filter(isEventOngoing)
   const startingSoon = events.filter(canEventStartInTheFuture)

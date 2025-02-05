@@ -1,5 +1,9 @@
 import { TiFView } from "@core-root"
+import { EventMocks } from "@event-details-boundary/MockData"
+import { clientSideEventFromResponse } from "@event/ClientSideEvent"
+import { LiveEventsFeature, LiveEventsStore } from "@event/LiveEvents"
 import { eventsByRegion } from "@explore-events-boundary"
+import { tiFQueryClient } from "@lib/ReactQuery"
 import { SettingsProvider } from "@settings-storage/Hooks"
 import { SQLiteLocalSettingsStorage } from "@settings-storage/LocalSettings"
 import { PersistentSettingsStores } from "@settings-storage/PersistentStores"
@@ -28,19 +32,35 @@ userSettings.update({
   eventPresetDurations: [3900, 7500, 8400, 12300, 9500, 13700]
 })
 
+const store = new LiveEventsStore(tiFQueryClient, async () => {
+  const ongoingEvent = clientSideEventFromResponse({
+    ...EventMocks.MockSingleAttendeeResponse,
+    time: {
+      ...EventMocks.MockSingleAttendeeResponse.time,
+      secondsToStart: -100
+    }
+  })
+  return {
+    ongoing: [ongoingEvent],
+    startingSoon: []
+  }
+})
+
 export const Basic = () => (
   <SettingsProvider
     localSettingsStore={localSettings}
     userSettingsStore={userSettings}
   >
-    <UserProfileFeature.Provider>
-      <AlphaUserSessionProvider storage={storage}>
-        <TiFView
-          fetchEvents={eventsByRegion}
-          isFontsLoaded={true}
-          style={{ flex: 1 }}
-        />
-      </AlphaUserSessionProvider>
-    </UserProfileFeature.Provider>
+    <LiveEventsFeature.Provider store={store}>
+      <UserProfileFeature.Provider>
+        <AlphaUserSessionProvider storage={storage}>
+          <TiFView
+            fetchEvents={eventsByRegion}
+            isFontsLoaded={true}
+            style={{ flex: 1 }}
+          />
+        </AlphaUserSessionProvider>
+      </UserProfileFeature.Provider>
+    </LiveEventsFeature.Provider>
   </SettingsProvider>
 )

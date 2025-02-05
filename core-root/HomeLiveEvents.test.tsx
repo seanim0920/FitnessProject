@@ -55,10 +55,10 @@ describe("HomeLiveEvents tests", () => {
       })
       const { result } = renderUseHomeLiveEvents()
       await waitFor(() => {
-        expect(result.current.modalEvents).toEqual({
-          ongoing: [ongoingEvent],
-          startingSoon: [startingSoonEvent]
-        })
+        expect(result.current.modalEvents).toEqual([
+          ongoingEvent,
+          startingSoonEvent
+        ])
       })
     })
 
@@ -77,10 +77,7 @@ describe("HomeLiveEvents tests", () => {
       })
       const { result } = renderUseHomeLiveEvents()
       await waitFor(() => {
-        expect(result.current.modalEvents).toEqual({
-          ongoing: [ongoingEvent],
-          startingSoon: []
-        })
+        expect(result.current.modalEvents).toEqual([ongoingEvent])
       })
       act(() => result.current.modalClosed())
       expect(result.current.modalEvents).toEqual(undefined)

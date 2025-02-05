@@ -22,6 +22,7 @@ import { TiFContext } from "./Context"
 import { useCoreNavigation } from "@components/Navigation"
 import { defaultEditFormValues } from "@event/EditFormValues"
 import { atom, useAtomValue, useSetAtom } from "jotai"
+import { HomeLiveEventsView } from "./HomeLiveEvents"
 
 export type HomeProps = {
   style?: StyleProp<ViewStyle>
@@ -136,6 +137,9 @@ const FooterView = ({ onPageIndexTapped }: FooterProps) => {
           )}
         />
       </View>
+      <IfAuthenticated
+        thenRender={({ id }) => <HomeLiveEventsView id={id} />}
+      />
     </View>
   )
 }
@@ -172,7 +176,7 @@ const PageDotView = ({ index, onTapped }: PageDotProps) => (
 const ExploreView = () => {
   const scrollState = useAtomValue(scrollStateAtom)
   const { fetchEvents } = useContext(TiFContext)!
-  const { region, data, updateRegion } = useExploreEvents(
+  const { region, data, updateRegion, ongoingEvents } = useExploreEvents(
     createInitialCenter(),
     { fetchEvents, isSignificantlyDifferentRegions }
   )
@@ -184,6 +188,7 @@ const ExploreView = () => {
       >
         <ExploreEventsView
           region={region}
+          ongoingEvents={ongoingEvents}
           data={data}
           onRegionUpdated={updateRegion}
         />
