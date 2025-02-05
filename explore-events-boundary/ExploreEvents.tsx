@@ -30,6 +30,7 @@ import {
   maxRegionMeterRadius
 } from "./Region"
 import { SkeletonEventCard } from "./SkeletonEventCard"
+import { useLiveEvents } from "@event/LiveEvents"
 
 export const eventsByRegion = async (
   region: ExploreEventsRegion,
@@ -78,12 +79,14 @@ export const useExploreEvents = (
   { fetchEvents, isSignificantlyDifferentRegions }: UseExploreEventsEnvironment
 ) => {
   const { region, panToRegion } = useExploreEventsRegion(initialCenter)
+  const ongoingEvents = useLiveEvents((e) => e.ongoing)
   const { events, cancel } = useExploreEventsQuery(region!, fetchEvents, {
     enabled: !!region
   })
   return {
     region,
-    data: eventsQueryToExploreEventsData(events),
+    ongoingEvents,
+    data: eventsQueryToExploreEventsData(ongoingEvents, events),
     updateRegion: (newRegion: ExploreEventsRegion) => {
       if (!region) {
         panToRegion(newRegion)
@@ -96,6 +99,7 @@ export const useExploreEvents = (
 }
 
 const eventsQueryToExploreEventsData = (
+  ongoingEvents: ClientSideEvent[],
   query: UseQueryResult<ClientSideEvent[], unknown>
 ): ExploreEventsData => {
   if (query.isPending) {
@@ -105,7 +109,8 @@ const eventsQueryToExploreEventsData = (
   } else if (query.isError) {
     return { status: "error", retry: query.refetch }
   }
-  return { status: "success", events: query.data }
+  const ids = new Set(ongoingEvents.map((e) => e.id))
+  return { status: "success", events: query.data.filter((e) => !ids.has(e.id)) }
 }
 
 const useExploreEventsRegion = (initialCenter: ExploreEventsInitialCenter) => {
