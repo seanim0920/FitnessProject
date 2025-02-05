@@ -93,3 +93,17 @@ export const hasEventEnded = (e: ClientSideEvent) => {
   if (e.endedDateTime) return true
   return -eventSecondsToStart(e.time) >= e.time.dateRange.diff.seconds
 }
+
+/**
+ * Returns true if an event is ongoing.
+ */
+export const isEventOngoing = (e: ClientSideEvent) => {
+  return hasEventTimeStarted(e.time) && !hasEventEnded(e)
+}
+
+/**
+ * Returns true if an event has the possibility of starting in the future.
+ */
+export const canEventStartInTheFuture = (e: ClientSideEvent) => {
+  return !hasEventTimeStarted(e.time) && !hasEventEnded(e)
+}

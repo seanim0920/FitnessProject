@@ -31,6 +31,15 @@ describe("LiveEvents tests", () => {
         endedDateTime: new Date(),
         id: 9
       }
+      const doneOngoingEvent = {
+        ...EventMocks.MockSingleAttendeeResponse,
+        endedDateTime: new Date(),
+        time: {
+          ...EventMocks.MockSingleAttendeeResponse.time,
+          secondsToStart: -190
+        },
+        id: 8
+      }
       const startingSoonEvent = {
         ...EventMocks.MockSingleAttendeeResponse,
         time: {
@@ -49,7 +58,14 @@ describe("LiveEvents tests", () => {
           },
           mockResponse: {
             status: 200,
-            data: { events: [ongoingEvent, doneEvent, startingSoonEvent] }
+            data: {
+              events: [
+                ongoingEvent,
+                doneOngoingEvent,
+                doneEvent,
+                startingSoonEvent
+              ]
+            }
           }
         }
       })

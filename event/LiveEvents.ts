@@ -8,7 +8,9 @@ import {
   ClientSideEvent,
   hasEventEnded,
   hasEventTimeStarted,
-  clientSideEventFromResponse
+  clientSideEventFromResponse,
+  isEventOngoing,
+  canEventStartInTheFuture
 } from "./ClientSideEvent"
 import { UserID } from "TiFShared/domain-models/User"
 import { tiFQueryClient } from "@lib/ReactQuery"
@@ -39,12 +41,8 @@ export type LiveEvents = {
 }
 
 const groupIntoLiveEvents = (events: ClientSideEvent[]) => {
-  const ongoing = events.filter(
-    (e) => hasEventTimeStarted(e.time) && !hasEventEnded(e)
-  )
-  const startingSoon = events.filter(
-    (e) => !hasEventTimeStarted(e.time) && !hasEventEnded(e)
-  )
+  const ongoing = events.filter(isEventOngoing)
+  const startingSoon = events.filter(canEventStartInTheFuture)
   return { ongoing, startingSoon }
 }
 
