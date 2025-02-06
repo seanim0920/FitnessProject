@@ -129,7 +129,7 @@ export type BackButtonProps = NativeStackHeaderLeftProps & {
 export const useBackButton = (
   Button?: (props: BackButtonProps) => JSX.Element
 ) => {
-  const navigation = useNavigation<UseNavigationReturn>()
+  const navigation = useTiFNavigation()
   const DefaultButton = useDefaultBackButtonView()
   const HeaderButton = Button ?? DefaultButton
   useEffect(() => {
@@ -141,7 +141,7 @@ export const useBackButton = (
 
 const useDefaultBackButtonView = () => {
   const indexRef = useRef(-1)
-  const state = useNavigation().getState()
+  const state = useTiFNavigation().getState()
   indexRef.current =
     indexRef.current === -1 && state?.index !== undefined
       ? state.index
@@ -157,7 +157,7 @@ export const ChevronBackButton = ({
   navigation,
   style = styles.backButtonPadding
 }: BackButtonProps) => {
-  const currentNavigation = useNavigation()
+  const currentNavigation = useTiFNavigation()
   return (
     <TouchableIonicon
       icon={{ name: "chevron-back" }}
@@ -172,7 +172,7 @@ export const XMarkBackButton = ({
   navigation,
   style = styles.backButtonPadding
 }: BackButtonProps) => {
-  const currentNavigation = useNavigation()
+  const currentNavigation = useTiFNavigation()
   return (
     <TouchableIonicon
       icon={{ name: "close" }}
