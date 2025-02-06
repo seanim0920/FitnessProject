@@ -14,6 +14,7 @@ import { StyleProp, StyleSheet, ViewStyle } from "react-native"
 import { EventID } from "TiFShared/domain-models/Event"
 import { UserHandle, UserID } from "TiFShared/domain-models/User"
 import { TouchableIonicon } from "./common/Icons"
+import { useBottomSheetModal } from "@gorhom/bottom-sheet"
 
 /**
  * A helper type that's useful for making reusable navigation flows.
@@ -32,24 +33,35 @@ export type UseNavigationReturn = Omit<
   getState(): NavigationState | undefined
 }
 
-export const NavigationWorkaroundContext = createContext<
-  UseNavigationReturn | undefined
->(undefined)
+/**
+ * Returns the main navigator in the current navigation context in the app.
+ *
+ * Use this instead hook of `useNavigation`, as this hook will ensure to dismiss any bottom sheet
+ * modals when navigating.
+ */
+export const useTiFNavigation = () => {
+  const { dismissAll } = useBottomSheetModal()
+  const navigation = useNavigation<UseNavigationReturn>()
+  const navigate: UseNavigationReturn["navigate"] = (
+    ...args: Parameters<UseNavigationReturn["navigate"]>
+  ) => {
+    dismissAll()
+    navigation.navigate(...args)
+  }
+  const replace: UseNavigationReturn["replace"] = (
+    ...args: Parameters<UseNavigationReturn["replace"]>
+  ) => {
+    dismissAll()
+    navigation.navigate(...args)
+  }
+  return { ...navigation, navigate, replace }
+}
 
 /**
  * Returns an object of functions to navigate to essential app screens.
  */
 export const useCoreNavigation = () => {
-  // NB: For some reason, the react navigation context can get lost when rendering elements in a
-  // bottom sheet modal, so we'll have to pass a navigation object from the outside.
-  const reactNavigation = useReactNavigationIfAvailable()
-  const workaroundNavigation = useContext(NavigationWorkaroundContext)
-  const navigation = workaroundNavigation ?? reactNavigation
-  if (!navigation) {
-    throw new Error(
-      "Couldn't find a navigation object. Is your component inside NavigationContainer?"
-    )
-  }
+  const navigation = useTiFNavigation()
   return {
     presentEditEvent: (edit: EditEventFormValues, id?: EventID) => {
       const formValues = toRouteableEditFormValues(edit)
@@ -81,14 +93,6 @@ export const useCoreNavigation = () => {
     pushAttendeesList: (id: EventID) => {
       navigation.navigate("eventAttendeesList", { id })
     }
-  }
-}
-
-const useReactNavigationIfAvailable = () => {
-  try {
-    return useNavigation<UseNavigationReturn>()
-  } catch {
-    return undefined
   }
 }
 

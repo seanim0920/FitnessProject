@@ -23,6 +23,7 @@ import { useCoreNavigation } from "@components/Navigation"
 import { defaultEditFormValues } from "@event/EditFormValues"
 import { atom, useAtomValue, useSetAtom } from "jotai"
 import { HomeLiveEventsView } from "./HomeLiveEvents"
+import { TiFBottomSheetProvider } from "@components/BottomSheet"
 
 export type HomeProps = {
   style?: StyleProp<ViewStyle>
@@ -37,50 +38,52 @@ export const HomeView = ({ style }: HomeProps) => {
   const setScrollState = useSetAtom(scrollStateAtom)
   const footerBackgroundOpacity = useSharedValue(0)
   return (
-    <View style={style}>
-      <View style={styles.container}>
-        <AnimatedPagerView
-          ref={pagerRef}
-          orientation="horizontal"
-          layoutDirection="ltr"
-          onPageSelected={(e) => setPageIndex(e.nativeEvent.position)}
-          onPageScroll={(e) => {
-            if (e.nativeEvent.position > 0) {
-              footerBackgroundOpacity.value = 1
-            } else {
-              footerBackgroundOpacity.value = e.nativeEvent.offset
-            }
-          }}
-          onPageScrollStateChanged={(e) => {
-            setScrollState(e.nativeEvent.pageScrollState)
-          }}
-          style={styles.pager}
-        >
-          <View key="1" style={styles.screen}>
-            <TODO />
-          </View>
-          <View key="2" style={styles.screen}>
-            <ExploreView />
-          </View>
-        </AnimatedPagerView>
-        <TiFFooterView
-          backgroundStyle={useAnimatedStyle(() => ({
-            backgroundColor: colorWithOpacity(
-              AppStyles.cardColor,
-              footerBackgroundOpacity.value
-            )
-          }))}
-          style={styles.footer}
-        >
-          <FooterView
-            onPageIndexTapped={(index) => pagerRef.current?.setPage(index)}
-          />
-        </TiFFooterView>
+    <TiFBottomSheetProvider>
+      <View style={style}>
+        <View style={styles.container}>
+          <AnimatedPagerView
+            ref={pagerRef}
+            orientation="horizontal"
+            layoutDirection="ltr"
+            onPageSelected={(e) => setPageIndex(e.nativeEvent.position)}
+            onPageScroll={(e) => {
+              if (e.nativeEvent.position > 0) {
+                footerBackgroundOpacity.value = 1
+              } else {
+                footerBackgroundOpacity.value = e.nativeEvent.offset
+              }
+            }}
+            onPageScrollStateChanged={(e) => {
+              setScrollState(e.nativeEvent.pageScrollState)
+            }}
+            style={styles.pager}
+          >
+            <View key="1" style={styles.screen}>
+              <TODO />
+            </View>
+            <View key="2" style={styles.screen}>
+              <ExploreView />
+            </View>
+          </AnimatedPagerView>
+          <TiFFooterView
+            backgroundStyle={useAnimatedStyle(() => ({
+              backgroundColor: colorWithOpacity(
+                AppStyles.cardColor,
+                footerBackgroundOpacity.value
+              )
+            }))}
+            style={styles.footer}
+          >
+            <FooterView
+              onPageIndexTapped={(index) => pagerRef.current?.setPage(index)}
+            />
+          </TiFFooterView>
+        </View>
+        <IfAuthenticated
+          thenRender={({ id }) => <HomeLiveEventsView id={id} />}
+        />
       </View>
-      <IfAuthenticated
-        thenRender={({ id }) => <HomeLiveEventsView id={id} />}
-      />
-    </View>
+    </TiFBottomSheetProvider>
   )
 }
 

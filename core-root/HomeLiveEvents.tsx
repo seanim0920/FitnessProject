@@ -1,7 +1,8 @@
 import { TiFBottomSheet } from "@components/BottomSheet"
 import {
-  NavigationWorkaroundContext,
-  UseNavigationReturn
+  NavigatorContext,
+  NavigatorProvider,
+  useTiFNavigation
 } from "@components/Navigation"
 import { Title } from "@components/Text"
 import { IoniconCloseButton } from "@components/common/Icons"
@@ -17,11 +18,10 @@ import {
   BottomSheetHandle,
   BottomSheetHandleProps
 } from "@gorhom/bottom-sheet"
-import { NavigationContainer, useNavigation } from "@react-navigation/native"
 import { UserID } from "TiFShared/domain-models/User"
 import dayjs from "dayjs"
 import { useCallback, useEffect, useState } from "react"
-import { ViewStyle, StyleProp, View, StyleSheet, FlatList } from "react-native"
+import { ViewStyle, StyleProp, View, StyleSheet } from "react-native"
 
 const TWO_HOURS = dayjs.duration(2, "hours").asSeconds()
 
@@ -55,7 +55,6 @@ const SNAP_POINTS = ["50%", "75%"]
 
 export const HomeLiveEventsView = ({ id, style }: HomeLiveEventsProps) => {
   const state = useHomeLiveEvents(id)
-  const navigation = useNavigation<UseNavigationReturn>()
   return (
     <TiFBottomSheet
       sizing={{ snapPoints: SNAP_POINTS }}
@@ -69,15 +68,13 @@ export const HomeLiveEventsView = ({ id, style }: HomeLiveEventsProps) => {
       onDismiss={state.modalClosed}
       style={style}
     >
-      <NavigationWorkaroundContext.Provider value={navigation}>
-        <BottomSheetFlatList
-          keyExtractor={keyExtractor}
-          renderItem={({ item }) => (
-            <EventCard event={item} style={styles.eventCard} />
-          )}
-          data={state.modalEvents ?? []}
-        />
-      </NavigationWorkaroundContext.Provider>
+      <BottomSheetFlatList
+        keyExtractor={keyExtractor}
+        renderItem={({ item }) => (
+          <EventCard event={item} style={styles.eventCard} />
+        )}
+        data={state.modalEvents ?? []}
+      />
     </TiFBottomSheet>
   )
 }

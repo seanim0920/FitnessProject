@@ -4,14 +4,17 @@ import "TiFShared"
 
 console.log(BUILD_TYPE)
 
-if (BUILD_TYPE !== "storybook") {
-  // @ts-ignore App entry
-  const Module = require("./.storybook/App")
-  registerRootComponent(Module.default)
-} else {
-  // @ts-ignore App entry
-  const Module = require("./App")
-  // @ts-ignore Not inferring the type of "Module" correctly
-  Module.setupApp()
-  registerRootComponent(Module.default)
-}
+const Module = require("./.storybook/App")
+registerRootComponent(Module.default)
+
+// if (BUILD_TYPE !== "storybook") {
+//   // @ts-ignore App entry
+//   const Module = require("./.storybook/App")
+//   registerRootComponent(Module.default)
+// } else {
+//   // @ts-ignore App entry
+//   const Module = require("./App")
+//   // @ts-ignore Not inferring the type of "Module" correctly
+//   Module.setupApp()
+//   registerRootComponent(Module.default)
+// }
