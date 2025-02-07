@@ -9,7 +9,7 @@ import {
   StackNavigationProp,
   createStackNavigator
 } from "@react-navigation/stack"
-import React, { createContext, useContext, useEffect, useRef } from "react"
+import React, { useEffect, useRef } from "react"
 import { StyleProp, StyleSheet, ViewStyle } from "react-native"
 import { EventID } from "TiFShared/domain-models/Event"
 import { UserHandle, UserID } from "TiFShared/domain-models/User"
@@ -39,7 +39,7 @@ export type UseNavigationReturn = Omit<
  * Use this instead hook of `useNavigation`, as this hook will ensure to dismiss any bottom sheet
  * modals when navigating.
  */
-export const useTiFNavigation = () => {
+export const useTiFNavigation = (): UseNavigationReturn => {
   const { dismissAll } = useBottomSheetModal()
   const navigation = useNavigation<UseNavigationReturn>()
   const navigate: UseNavigationReturn["navigate"] = (
