@@ -9,11 +9,7 @@ import { Title } from "@components/Text"
 import { IoniconCloseButton } from "@components/common/Icons"
 import { ClientSideEvent, eventSecondsToStart } from "@event/ClientSideEvent"
 import { EventCard } from "@event/EventCard"
-import {
-  LiveEventsFeature,
-  isEmptyLiveEvents,
-  useLiveEvents
-} from "@event/LiveEvents"
+import { isEmptyLiveEvents, useLiveEvents } from "@event/LiveEvents"
 import {
   BottomSheetFlatList,
   BottomSheetHandle,
@@ -21,17 +17,13 @@ import {
 } from "@gorhom/bottom-sheet"
 import { UserID } from "TiFShared/domain-models/User"
 import dayjs from "dayjs"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useState } from "react"
 import { ViewStyle, StyleProp, View, StyleSheet } from "react-native"
 
 const TWO_HOURS = dayjs.duration(2, "hours").asSeconds()
 
-export const useHomeLiveEvents = (id: UserID) => {
-  const { store } = LiveEventsFeature.useContext()
+export const useHomeLiveEvents = () => {
   const [isModalClosed, setIsModalClosed] = useState(false)
-  useEffect(() => {
-    return store.beginObserving(id)
-  }, [store, id])
   const liveEvents = useLiveEvents((events) => {
     if (isModalClosed || isEmptyLiveEvents(events)) {
       return undefined

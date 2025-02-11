@@ -22,6 +22,7 @@ import {
   setAutocorrectingInterval
 } from "@lib/AutocorrectingInterval"
 import { logger } from "TiFShared/logging"
+import { AlphaUserStorage } from "@user/alpha"
 
 /**
  * Events that the app is watching for their start times.
@@ -162,14 +163,26 @@ export class LiveEventsStore {
     }
   }
 
+  /**
+   * Observes user changes from the specified {@link AlphaUserStorage} in order to keep the live
+   * events fresh with the current user.
+   *
+   * @param storage {@link AlphaUserStorage}.
+   */
+  observeUserChanges(storage: AlphaUserStorage) {
+    storage.subscribe((user) => this.beginObserving(user.id))
+  }
+
   private updateCurrent(events: LiveEvents) {
     this._current = events
     this.subscribers.send(events)
   }
+
+  static default = new LiveEventsStore()
 }
 
 export const LiveEventsFeature = featureContext({
-  store: new LiveEventsStore()
+  store: LiveEventsStore.default
 })
 
 /**

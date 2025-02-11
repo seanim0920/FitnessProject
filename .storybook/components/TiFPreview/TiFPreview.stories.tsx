@@ -49,6 +49,7 @@ const store = new LiveEventsStore(tiFQueryClient, async () => {
     startingSoon: []
   }
 })
+store.observeUserChanges(storage)
 
 export const Basic = () => (
   <SettingsProvider

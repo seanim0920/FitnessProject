@@ -119,12 +119,13 @@ describe("LiveEvents tests", () => {
       liveEvents.mockResolvedValue(events)
 
       store.subscribe(callback)
-      store.beginObserving(TEST_USER_ID)
+      const unsub = store.beginObserving(TEST_USER_ID)
 
       await waitFor(() => {
         expect(callback).toHaveBeenNthCalledWith(2, events)
       })
       expect(callback).toHaveBeenCalledTimes(2)
+      unsub()
     })
 
     it("should move starting soon events to ongoing when enough time passes for them to start", async () => {
@@ -141,7 +142,7 @@ describe("LiveEvents tests", () => {
       liveEvents.mockResolvedValue({ ongoing: [], startingSoon: [event] })
 
       store.subscribe(callback)
-      store.beginObserving(TEST_USER_ID)
+      const unsub = store.beginObserving(TEST_USER_ID)
 
       await waitFor(() => {
         expect(store.current).toEqual({ ongoing: [], startingSoon: [event] })
@@ -158,6 +159,7 @@ describe("LiveEvents tests", () => {
         ongoing: [event],
         startingSoon: []
       })
+      unsub()
     })
 
     it("should remove events to ongoing when enough time passes for them to finish", async () => {
@@ -175,7 +177,7 @@ describe("LiveEvents tests", () => {
       liveEvents.mockResolvedValue({ ongoing: [event], startingSoon: [] })
 
       store.subscribe(callback)
-      store.beginObserving(TEST_USER_ID)
+      const unsub = store.beginObserving(TEST_USER_ID)
 
       await waitFor(() => {
         expect(store.current).toEqual({ ongoing: [event], startingSoon: [] })
@@ -192,6 +194,7 @@ describe("LiveEvents tests", () => {
         ongoing: [],
         startingSoon: []
       })
+      unsub()
     })
   })
 })

@@ -10,11 +10,13 @@ import { verifyNeverOccurs } from "@test-helpers/ExpectNeverOccurs"
 import { EventMocks } from "@event-details-boundary/MockData"
 import { clientSideEventFromResponse } from "@event/ClientSideEvent"
 import { AlphaUserMocks } from "@user/alpha/MockData"
+import { fakeTimers } from "@test-helpers/Timers"
 
 describe("HomeLiveEvents tests", () => {
   describe("UseHomeLiveEvents tests", () => {
     const liveEvents = jest.fn()
     beforeEach(() => liveEvents.mockReset())
+    fakeTimers()
 
     it("should present no modal data when empty events", async () => {
       liveEvents.mockResolvedValueOnce(EMPTY_LIVE_EVENTS)
@@ -85,7 +87,8 @@ describe("HomeLiveEvents tests", () => {
 
     const renderUseHomeLiveEvents = () => {
       const store = new LiveEventsStore(createTestQueryClient(), liveEvents)
-      return renderHook(() => useHomeLiveEvents(AlphaUserMocks.Blob.id), {
+      store.beginObserving(AlphaUserMocks.Blob.id)
+      return renderHook(() => useHomeLiveEvents(), {
         wrapper: ({ children }) => (
           <LiveEventsFeature.Provider store={store}>
             {children}

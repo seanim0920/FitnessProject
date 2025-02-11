@@ -79,9 +79,7 @@ export const HomeView = ({ style }: HomeProps) => {
             />
           </TiFFooterView>
         </View>
-        <IfAuthenticated
-          thenRender={({ id }) => <HomeLiveEventsView id={id} />}
-        />
+        <HomeLiveEventsView />
       </View>
     </TiFBottomSheetProvider>
   )
