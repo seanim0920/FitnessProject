@@ -63,16 +63,6 @@ const _EventCard = ({ event, onLeft, style }: EventCardProps) => {
             <View style={styles.detailsRow}>
               <View style={styles.infoColumn}>
                 <Subtitle>{event.title}</Subtitle>
-                {isEventOngoing(event) && (
-                  <View style={styles.ongoingRow}>
-                    <View style={styles.ongoing}>
-                      <CaptionTitle style={styles.ongoingText}>
-                        ONGOING
-                      </CaptionTitle>
-                    </View>
-                    <View style={styles.ongoingSpacer} />
-                  </View>
-                )}
                 <View style={[styles.centeredRow, styles.iconSpacing]}>
                   <Ionicon name="calendar" size={16} />
                   <Footnote>
@@ -85,6 +75,16 @@ const _EventCard = ({ event, onLeft, style }: EventCardProps) => {
                     {event.location.placemark?.name ?? "Unknown Location"}
                   </Footnote>
                 </View>
+                {isEventOngoing(event) && (
+                  <View style={styles.ongoingRow}>
+                    <View style={styles.ongoing}>
+                      <CaptionTitle style={styles.ongoingText}>
+                        ONGOING
+                      </CaptionTitle>
+                    </View>
+                    <View style={styles.ongoingSpacer} />
+                  </View>
+                )}
               </View>
               <CalendarDayView date={event.time.dateRange.startDateTime} />
             </View>
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   ongoingText: {
     color: "white",
     backgroundColor: AppStyles.green.toString(),
-    padding: 8
+    padding: 4
   },
   ongoingSpacer: {
     flex: 1

@@ -4,6 +4,7 @@ import {
   NavigatorProvider,
   useTiFNavigation
 } from "@components/Navigation"
+import { useScreenBottomPadding } from "@components/Padding"
 import { Title } from "@components/Text"
 import { IoniconCloseButton } from "@components/common/Icons"
 import { ClientSideEvent, eventSecondsToStart } from "@event/ClientSideEvent"
@@ -51,10 +52,14 @@ export type HomeLiveEventsProps = {
   style?: StyleProp<ViewStyle>
 }
 
-const SNAP_POINTS = ["50%", "75%"]
+const SNAP_POINTS = ["50%", "85%"]
 
 export const HomeLiveEventsView = ({ id, style }: HomeLiveEventsProps) => {
   const state = useHomeLiveEvents(id)
+  const inset = useScreenBottomPadding({
+    safeAreaScreens: 48,
+    nonSafeAreaScreens: 0
+  })
   return (
     <TiFBottomSheet
       sizing={{ snapPoints: SNAP_POINTS }}
@@ -73,7 +78,10 @@ export const HomeLiveEventsView = ({ id, style }: HomeLiveEventsProps) => {
         renderItem={({ item }) => (
           <EventCard event={item} style={styles.eventCard} />
         )}
+        ItemSeparatorComponent={SeparatorView}
         data={state.modalEvents ?? []}
+        contentContainerStyle={styles.listContainer}
+        contentInset={{ bottom: inset }}
       />
     </TiFBottomSheet>
   )
@@ -90,9 +98,13 @@ const HandleView = (
       <View style={styles.closeButtonSpacer} />
       <IoniconCloseButton size={20} onPress={props.onCloseTapped} />
     </View>
-    <Title>Don&apos;t miss out on your upcoming events!</Title>
+    <Title style={styles.titleText}>
+      Don&apos;t miss out on your upcoming events!
+    </Title>
   </View>
 )
+
+const SeparatorView = () => <View style={styles.separator} />
 
 const styles = StyleSheet.create({
   handle: {
@@ -102,5 +114,8 @@ const styles = StyleSheet.create({
   },
   eventCard: { paddingHorizontal: 24 },
   closeButtonRow: { display: "flex", flexDirection: "row" },
-  closeButtonSpacer: { flex: 1 }
+  closeButtonSpacer: { flex: 1 },
+  titleText: { textAlign: "center" },
+  separator: { height: 16 },
+  listContainer: { paddingBottom: 16 }
 })
