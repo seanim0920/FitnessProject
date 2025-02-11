@@ -99,7 +99,12 @@ export const ExpandableMapSnippetView = forwardRef(function Snippet(
             <MapView
               {...collapsedMapProps}
               ref={ref}
-              style={[{ height: Math.max(300, 200 + overlayLayout.height) }]}
+              style={[
+                {
+                  height: Math.max(300, 200 + overlayLayout.height),
+                  opacity: isExpanded ? 0 : 1
+                }
+              ]}
               loadingEnabled
               zoomEnabled={false}
               scrollEnabled={false}
