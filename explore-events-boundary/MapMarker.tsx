@@ -23,17 +23,12 @@ export const ExploreEventsMarkerView = ({
   style
 }: ExploreEventsMarkerProps) => (
   <AvatarMapMarkerView name={hostName} imageURL={imageURL} style={style}>
-    {attendeeCount > 1 ? (
-      <View style={[{ backgroundColor: color }, styles.badgeContainer]}>
-        <Ionicon
-          style={styles.badgeIcon}
-          name="people"
-          color="white"
-          size={12}
-        />
+    <View style={[{ backgroundColor: color }, styles.badgeContainer]}>
+      <Ionicon style={styles.badgeIcon} name="people" color="white" size={12} />
+      {attendeeCount > 1 ? (
         <CaptionTitle style={styles.badgeText}>{attendeeCount}</CaptionTitle>
-      </View>
-    ) : undefined}
+      ) : undefined}
+    </View>
   </AvatarMapMarkerView>
 )
 
