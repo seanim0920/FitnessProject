@@ -6,7 +6,6 @@ import { PersistentSettingsStores } from "@settings-storage/PersistentStores"
 import { SQLiteUserSettingsStorage } from "@settings-storage/UserSettings"
 import { testSQLite } from "@test-helpers/SQLite"
 import { AlphaUserSessionProvider, AlphaUserStorage } from "@user/alpha"
-import { AlphaUserMocks } from "@user/alpha/MockData"
 import React from "react"
 import { UserProfileFeature } from "user-profile-boundary/Context"
 
@@ -16,7 +15,8 @@ const TiFPreview = {
 
 export default TiFPreview
 
-const storage = AlphaUserStorage.ephemeral(AlphaUserMocks.TheDarkLord)
+const storage = AlphaUserStorage.default
+storage.removeUserToken()
 
 const localSettings = PersistentSettingsStores.local(
   new SQLiteLocalSettingsStorage(testSQLite)
@@ -33,14 +33,14 @@ export const Basic = () => (
     localSettingsStore={localSettings}
     userSettingsStore={userSettings}
   >
-    <UserProfileFeature.Provider>
-      <AlphaUserSessionProvider storage={storage}>
+    <AlphaUserSessionProvider storage={storage}>
+      <UserProfileFeature.Provider>
         <TiFView
           fetchEvents={eventsByRegion}
           isFontsLoaded={true}
           style={{ flex: 1 }}
         />
-      </AlphaUserSessionProvider>
-    </UserProfileFeature.Provider>
+      </UserProfileFeature.Provider>
+    </AlphaUserSessionProvider>
   </SettingsProvider>
 )

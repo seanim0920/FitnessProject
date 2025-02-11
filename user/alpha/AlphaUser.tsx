@@ -58,6 +58,15 @@ export class AlphaUserStorage {
   }
 
   /**
+   * Removes the current JWT access token from the current store.
+   */
+  async removeUserToken(): Promise<void> {
+    const token = await this._store.getItemAsync(ALPHA_USER_STORAGE_KEY)
+    if (!token) return
+    return await this._store.deleteItemAsync(ALPHA_USER_STORAGE_KEY)
+  }
+
+  /**
    * Stores the JWT access token containing the alpha user details in its payload.
    */
   async store(token: string) {
