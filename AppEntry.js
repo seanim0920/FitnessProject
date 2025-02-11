@@ -1,4 +1,4 @@
-import { API_URL, BUILD_TYPE } from "@env"
+import { BUILD_TYPE } from "@env"
 import { registerRootComponent } from "expo"
 import "TiFShared"
 

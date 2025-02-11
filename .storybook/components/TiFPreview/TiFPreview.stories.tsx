@@ -22,7 +22,8 @@ const TiFPreview = {
 
 export default TiFPreview
 
-const storage = AlphaUserStorage.ephemeral(AlphaUserMocks.TheDarkLord)
+const storage = AlphaUserStorage.default
+// storage.removeUserToken()
 
 const localSettings = PersistentSettingsStores.local(
   new SQLiteLocalSettingsStorage(testSQLite)
