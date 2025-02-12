@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { DragProvider } from './DragContext';
@@ -11,19 +11,6 @@ export const DragTargetMeta = {
 export default DragTargetMeta;
 
 export const Basic = () => {
-  const [hoveredStates, setHoveredStates] = useState({
-    red: false,
-    blue: false,
-    green: false,
-  });
-
-  const handleHoverChange = (color: keyof typeof hoveredStates) => (isHovered: boolean) => {
-    setHoveredStates(prev => ({
-      ...prev,
-      [color]: isHovered,
-    }));
-  };
-
   return (
     <GestureHandlerRootView style={styles.container}>
       <DragProvider>
@@ -33,42 +20,27 @@ export const Basic = () => {
               styles.target,
               styles.redTarget,
               { top: 100, left: 50 },
-              hoveredStates.red && styles.targetHovered,
             ]}
-            onHoverChange={handleHoverChange('red')}
-          >
-            <View style={styles.targetInner}>
-              {hoveredStates.red && <View style={styles.hoverIndicator} />}
-            </View>
-          </DragTarget>
+            activeStyle={styles.targetHovered}
+          />
 
           <DragTarget
             style={[
               styles.target,
               styles.blueTarget,
               { top: 100, right: 50 },
-              hoveredStates.blue && styles.targetHovered,
             ]}
-            onHoverChange={handleHoverChange('blue')}
-          >
-            <View style={styles.targetInner}>
-              {hoveredStates.blue && <View style={styles.hoverIndicator} />}
-            </View>
-          </DragTarget>
+            activeStyle={styles.targetHovered}
+          />
 
           <DragTarget
             style={[
               styles.target,
               styles.greenTarget,
               { bottom: 100, left: '50%', marginLeft: -50 },
-              hoveredStates.green && styles.targetHovered,
             ]}
-            onHoverChange={handleHoverChange('green')}
-          >
-            <View style={styles.targetInner}>
-              {hoveredStates.green && <View style={styles.hoverIndicator} />}
-            </View>
-          </DragTarget>
+            activeStyle={styles.targetHovered}
+          />
         </View>
       </DragProvider>
     </GestureHandlerRootView>
