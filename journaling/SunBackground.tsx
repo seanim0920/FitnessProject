@@ -1,5 +1,4 @@
 import {
-  AnimatedProp,
   Circle,
   Group,
   LinearGradient,
@@ -17,7 +16,8 @@ import {
   withTiming
 } from "react-native-reanimated"
 import { EdgeInsets } from "react-native-safe-area-context"
-import { Cloud, MovingCloudsDrawing, cloud } from "./Clouds"
+import { Cloud, MovingCloudsDrawing } from "./Clouds"
+import { FixedDateRange } from "TiFShared/domain-models/FixedDateRange"
 
 export type SunBackgroundColor = string
 
@@ -31,69 +31,99 @@ export type SunGradient = [
 export type SkyGradient = SunBackgroundColor[]
 
 export type SunBackground = {
-  sun: {
-    relativePosition: { x: number; y: number }
-    gradient: SunGradient
-  }
-  skyGradient: SkyGradient
+  time: SunBackgroundTime
+  dayRange: SunBackgroundDayRange
   clouds: Cloud[]
 }
 
-export const sunRelativePosition = (x: number) => {
-  return { x, y: Math.sin(3.125 * x) * 0.175 }
+export type SunBackgroundTime = number
+export type SunBackgroundDayRange = FixedDateRange
+
+const SUN_EVENT_TIME_MINUTES = 30
+
+export namespace Sky {
+  export const gradients = {
+    sunrise: ["#9ADDFA", "#F57A86", "#FF7040"] as SkyGradient,
+    sunset: ["#0C52BA", "#EC54B6", "#F7482E"] as SkyGradient,
+    morning: ["#17D0F9", "#24B7FB", "#319EFD"] as SkyGradient,
+    afternoon: ["#438AEF", "#266DCD", "#0A50AB"] as SkyGradient,
+    midDay: ["#3FADFB", "#6CACFF", "#3183FD"] as SkyGradient
+  }
+
+  export const gradientAtTime = (
+    t: SunBackgroundTime,
+    dayRange: SunBackgroundDayRange
+  ) => {
+    const sunEventTime = SUN_EVENT_TIME_MINUTES / dayRange.diff.minutes
+    if (t <= sunEventTime) {
+      return gradients.sunrise
+    } else if (t >= 1 - sunEventTime) {
+      return gradients.sunset
+    } else if (t <= 0.3) {
+      return gradients.morning
+    } else if (t <= 0.7) {
+      return gradients.midDay
+    } else {
+      return gradients.afternoon
+    }
+  }
+
+  export const gradientMidPoint = (
+    t: SunBackgroundTime,
+    size: SkSize,
+    edgeInsets: EdgeInsets
+  ) => {
+    const pos = Sun.absoluteYPosition(t, size, edgeInsets) / size.height
+    const boundPos = Sun.absoluteYPosition(0.3, size, edgeInsets) / size.height
+    return Math.max(pos, boundPos)
+  }
 }
 
-export const MID_DAY_SUN_GRADIENT: SunGradient = [
-  "#FFFCF0",
-  "#FCF0BE",
-  "#FAEAA5",
-  "#F9E48C"
-]
+export namespace Sun {
+  export const gradients = {
+    midDay: ["#FFFCF0", "#FCF0BE", "#FAEAA5", "#F9E48C"] as SunGradient,
+    sunset: ["#FEB16F", "#F59861", "#F18C5B", "#ED7F54"] as SunGradient,
+    sunrise: ["#FEDA6F", "#FBBC6B", "#F9AE6A", "#F89F68"] as SunGradient
+  }
 
-export const MORNING_DAY_SUN_GRADIENT: SunGradient = [
-  "#FEDA6F",
-  "#FBBC6B",
-  "#F9AE6A",
-  "#F89F68"
-]
+  export const gradientAtTime = (
+    t: SunBackgroundTime,
+    dayRange: SunBackgroundDayRange
+  ) => {
+    const sunEventTime = SUN_EVENT_TIME_MINUTES / dayRange.diff.minutes
+    if (t <= sunEventTime) {
+      return gradients.sunrise
+    } else if (t >= 1 - sunEventTime) {
+      return gradients.sunset
+    } else {
+      return gradients.midDay
+    }
+  }
 
-export const SUNSET_SUN_GRADIENT: SunGradient = [
-  "#FEB16F",
-  "#F59861",
-  "#F18C5B",
-  "#ED7F54"
-]
+  export const relativeYPosition = (t: SunBackgroundTime) => {
+    return Math.max(-0.6, -8 * Math.pow(t - 0.5, 4))
+  }
 
-export const MID_DAY_SKY_GRADIENT: SkyGradient = [
-  "#3FADFB",
-  "#6CACFF",
-  "#3183FD"
-]
-
-export const AFTERNOON_SKY_GRADIENT: SkyGradient = [
-  "#438AEF",
-  "#266DCD",
-  "#0A50AB"
-]
-
-export const MORNING_SKY_GRADIENT: SkyGradient = [
-  "#17D0F9",
-  "#24B7FB",
-  "#319EFD"
-]
-
-export const SUNRISE_SKY_GRADIENT: SkyGradient = [
-  "#FF7040",
-  "#F57A86",
-  "#65C5F6",
-  "#9ADDFA"
-]
-
-export const SUNSET_SKY_GRADIENT: SkyGradient = [
-  "#F7482E",
-  "#EC54B6",
-  "#0C52BA"
-]
+  export const absoluteYPosition = (
+    t: SunBackgroundTime,
+    size: SkSize,
+    edgeInsets: EdgeInsets
+  ) => {
+    const insetSize = {
+      width: size.width - edgeInsets.left - edgeInsets.right,
+      height: size.height - edgeInsets.top - edgeInsets.bottom
+    }
+    const topInsetHeightDiff = size.height - (size.height - edgeInsets.top)
+    const insetAspectRatio = insetSize.width / insetSize.height
+    const relativeY = relativeYPosition(t) * insetAspectRatio
+    return (
+      edgeInsets.top +
+      FADE_RING_RADIUS / 2 +
+      topInsetHeightDiff -
+      insetSize.height * relativeY
+    )
+  }
+}
 
 export type SunBackgroundProps = {
   size: SkSize
@@ -110,57 +140,34 @@ export const SunBackgroundDrawing = ({
   edgeInsets,
   background,
   size
-}: SunBackgroundProps) => {
-  const POSITIONS = [
-    [vec(-size.width * 1.35, size.height / 2), vec(size.width, size.height)],
-    [vec(-size.width * 0.65, size.height * 0.35), vec(size.width, size.height)],
-    [vec(size.width / 2, 0), vec(size.width / 2, size.height)],
-    [],
-    [
-      vec(-size.width * 1.35, size.height / 2),
-      vec(size.width * 1.75, size.height)
-    ]
-  ]
-  return (
-    <Group>
-      <Rect width={size.width} height={size.height}>
-        <LinearGradient
-          // start={vec(-size.width * 1.35, size.height / 2)}
-          start={POSITIONS[1][0]}
-          // end={vec(size.width, size.height)}
-          end={POSITIONS[1][1]}
-          // transform={[{ translateX: size.width }, { scaleX: -1 }]}
-          colors={background.skyGradient}
-          positions={[0.3, 0.45, 0.8, 1]}
-        />
-      </Rect>
-      <SunDrawing sun={background.sun} size={size} edgeInsets={edgeInsets} />
-      <MovingCloudsDrawing size={size} clouds={background.clouds} />
-    </Group>
-  )
-}
+}: SunBackgroundProps) => (
+  <Group>
+    <Rect width={size.width} height={size.height}>
+      <LinearGradient
+        start={vec(size.width / 2, 0)}
+        end={vec(size.width / 2, size.height)}
+        colors={Sky.gradientAtTime(background.time, background.dayRange)}
+        positions={[
+          0,
+          Sky.gradientMidPoint(background.time, size, edgeInsets),
+          1
+        ]}
+      />
+    </Rect>
+    <SunDrawing background={background} size={size} edgeInsets={edgeInsets} />
+    <MovingCloudsDrawing size={size} clouds={background.clouds} />
+  </Group>
+)
 
 export type SunProps = {
-  sun: SunBackground["sun"]
+  background: SunBackground
   size: SkSize
   edgeInsets: EdgeInsets
 }
 
-export const SunDrawing = ({ sun, size, edgeInsets }: SunProps) => {
-  const insetSize = {
-    width: size.width - edgeInsets.left - edgeInsets.right,
-    height: size.height - edgeInsets.top - edgeInsets.bottom
-  }
-  const topInsetHeightDiff = size.height - (size.height - edgeInsets.top)
-  const insetAspectRatio = insetSize.width / insetSize.height
-  // console.log("a", insetAspectRatio)
-  const relativeY = sun.relativePosition.y * insetAspectRatio
-  const sunX = size.width * sun.relativePosition.x
-  const sunY =
-    edgeInsets.top +
-    FADE_RING_RADIUS +
-    topInsetHeightDiff -
-    insetSize.height * relativeY
+export const SunDrawing = ({ background, size, edgeInsets }: SunProps) => {
+  const sunX = size.width * 0.5
+  const sunY = Sun.absoluteYPosition(background.time, size, edgeInsets)
   const ringRadius = useSharedValue(FADE_RING_RADIUS)
   const ringOpacity = useSharedValue(0)
   useEffect(() => {
@@ -174,26 +181,21 @@ export const SunDrawing = ({ sun, size, edgeInsets }: SunProps) => {
     )
     ringOpacity.value = withRepeat(
       withSequence(
-        withTiming(1.0, {
-          duration: 1000,
-          easing: Easing.linear
-        }),
-        withTiming(0, {
-          duration: 2500,
-          easing: Easing.linear
-        })
+        withTiming(1.0, { duration: 1000, easing: Easing.linear }),
+        withTiming(0, { duration: 2500, easing: Easing.linear })
       ),
       -1,
       true
     )
   }, [ringRadius, ringOpacity])
+  const gradient = Sun.gradientAtTime(background.time, background.dayRange)
   return (
     <Group>
       <Circle cx={sunX} cy={sunY} r={CORE_RADIUS}>
         <RadialGradient
           c={{ x: sunX, y: sunY }}
           r={CORE_RADIUS}
-          colors={sun.gradient}
+          colors={gradient}
           positions={[0.5, 0.75, 0.9, 1]}
         />
       </Circle>
@@ -201,7 +203,7 @@ export const SunDrawing = ({ sun, size, edgeInsets }: SunProps) => {
         cx={sunX}
         cy={sunY}
         r={OUTER_RING_RADIUS}
-        color={sun.gradient[3]}
+        color={gradient[3]}
         style="stroke"
         strokeWidth={4}
       />
@@ -209,7 +211,7 @@ export const SunDrawing = ({ sun, size, edgeInsets }: SunProps) => {
         cx={sunX}
         cy={sunY}
         r={ringRadius}
-        color={sun.gradient[3]}
+        color={gradient[3]}
         style="stroke"
         opacity={ringOpacity}
         strokeWidth={4}
