@@ -3,8 +3,15 @@ import { AppStyles } from "@lib/AppColorStyle"
 import { FontScaleFactors, useFontScale } from "@lib/Fonts"
 import { withTiFDefaultSpring } from "@lib/Reanimated"
 import { useEffectEvent } from "@lib/utils/UseEffectEvent"
-import { PrimitiveAtom, useAtom, useSetAtom } from "jotai"
-import { useEffect, useState } from "react"
+import {
+  events,
+  hapticPattern,
+  singleEventPattern,
+  transientEvent,
+  useHaptics
+} from "@modules/tif-haptics"
+import { PrimitiveAtom, useAtom, useAtomValue, useSetAtom } from "jotai"
+import { useEffect, useRef, useState } from "react"
 import {
   StyleProp,
   StyleSheet,
@@ -93,7 +100,7 @@ const BackgroundTrailView = ({
     style={[
       styles.backgroundTrail,
       useAnimatedStyle(() => ({
-        width: sliderPosition.value + INNER_TRACK_GAP * 3,
+        width: sliderPosition.value + INNER_TRACK_GAP * 5,
         height: withTiFDefaultSpring(
           height - (isSliding.value ? 0 : INNER_TRACK_GAP * 2)
         ) as number,
@@ -101,10 +108,10 @@ const BackgroundTrailView = ({
         marginLeft: withTiFDefaultSpring(
           !isSliding.value ? INNER_TRACK_GAP : 0
         ),
-        borderBottomLeftRadius: withTiFDefaultSpring(
-          isSliding.value ? INNER_TRACK_GAP * 2 : INNER_TRACK_GAP
-        ),
-        borderTopLeftRadius: withTiFDefaultSpring(
+        // NB: borderBottomLeftRadius and borderTopLeftRadius cause the track to flicker on iOS
+        // when the user long presses the knob, so we can achieve the same effect by using a full
+        // border radius + longer track width combo.
+        borderRadius: withTiFDefaultSpring(
           isSliding.value ? INNER_TRACK_GAP * 2 : INNER_TRACK_GAP
         )
       }))
@@ -137,12 +144,16 @@ const DurationsRowView = ({
           maxFontSizeMultiplier={FontScaleFactors.large}
           style={styles.presetText}
         >
-          {formatEventDurationPreset(duration)}
+          {formatDuration(duration)}
         </BodyText>
       </Pressable>
     ))}
   </View>
 )
+
+const formatDuration = (duration: number) => {
+  return formatEventDurationPreset(duration).replace(" ", "\n")
+}
 
 type SliderKnobProps = {
   durationAtom: PrimitiveAtom<number>
@@ -152,6 +163,52 @@ type SliderKnobProps = {
   height: number
 }
 
+// const durationChangedPattern
+
+const HAPTIC_PATTERNS = [
+  singleEventPattern(
+    transientEvent(0.0, { HapticIntensity: 0.4, HapticSharpness: 0.5 })
+  ),
+  singleEventPattern(
+    transientEvent(0.0, { HapticIntensity: 0.5, HapticSharpness: 0.6 })
+  ),
+  singleEventPattern(
+    transientEvent(0.0, { HapticIntensity: 0.6, HapticSharpness: 0.7 })
+  ),
+  singleEventPattern(
+    transientEvent(0.0, { HapticIntensity: 0.7, HapticSharpness: 0.8 })
+  ),
+  singleEventPattern(
+    transientEvent(0.0, { HapticIntensity: 0.8, HapticSharpness: 0.9 })
+  ),
+  singleEventPattern(
+    transientEvent(0.0, { HapticIntensity: 0.9, HapticSharpness: 1.0 })
+  )
+]
+
+const useSliderKnob = (
+  durationAtom: PrimitiveAtom<number>,
+  isSliding: SharedValue<boolean>,
+  sliderPosition: SharedValue<number>,
+  stateEntries: EditEventDurationPickerStateEntries
+) => {
+  const haptics = useHaptics()
+  const [duration, setDuration] = useAtom(durationAtom)
+  const animateToPosition = useEffectEvent((dimensions?: LayoutRectangle) => {
+    if (!isSliding.value) {
+      sliderPosition.value = withTiFDefaultSpring(dimensions?.x ?? 0)
+    }
+  })
+  return {
+    duration,
+    animateToPosition,
+    setDuration: (duration: number) => {
+      haptics.play(HAPTIC_PATTERNS[durationIndex(stateEntries, duration)])
+      setDuration(duration)
+    }
+  }
+}
+
 const SliderKnobView = ({
   durationAtom,
   sliderPosition,
@@ -159,19 +216,28 @@ const SliderKnobView = ({
   pickerState,
   height
 }: SliderKnobProps) => {
-  const [duration, setDuration] = useAtom(durationAtom)
   const stateEntries = pickerStateEntries(pickerState)
-  const selectedDimensions = layoutForDuration(stateEntries, duration)
-  const animateToPosition = useEffectEvent((dimensions?: LayoutRectangle) => {
-    if (!isSliding.value) {
-      sliderPosition.value = withTiFDefaultSpring(dimensions?.x ?? 0)
-    }
-  })
-  const previousTranslation = useSharedValue(0)
-  useEffect(
-    () => animateToPosition(selectedDimensions),
-    [selectedDimensions, animateToPosition]
+  const { duration, animateToPosition, setDuration } = useSliderKnob(
+    durationAtom,
+    isSliding,
+    sliderPosition,
+    stateEntries
   )
+  const selectedDimensions = layoutForDuration(stateEntries, duration)
+  const previousTranslation = useSharedValue(0)
+  const didAppear = useRef(false)
+  useEffect(() => {
+    let timeout: NodeJS.Timeout
+    if (!didAppear.current) {
+      timeout = setTimeout(() => {
+        animateToPosition(selectedDimensions)
+      }, 300)
+      didAppear.current = true
+    } else {
+      animateToPosition(selectedDimensions)
+    }
+    return () => clearTimeout(timeout)
+  }, [selectedDimensions, animateToPosition])
   const panGestureEndBound = endBound(pickerState)
   const panGesture = Gesture.Pan()
     .onUpdate((event) => {
@@ -231,7 +297,7 @@ const SliderKnobView = ({
             style={[styles.selectedText, { width: selectedDimensions?.width }]}
             maxFontSizeMultiplier={FontScaleFactors.large}
           >
-            {formatEventDurationPreset(duration)}
+            {formatDuration(duration)}
           </Headline>
         </View>
       </Animated.View>
@@ -327,16 +393,24 @@ export const durationAtPosition = (
   return entries[index][0]
 }
 
+const durationIndex = (
+  entries: EditEventDurationPickerStateEntries,
+  duration: number
+) => {
+  "worklet"
+  return entries.findIndex(([d, _], i, entries) => {
+    if (i === entries.length - 1) return duration >= d
+    if (i === 0) return duration < entries[i + 1][0]
+    return duration >= d && duration < entries[i + 1][0]
+  })
+}
+
 export const layoutForDuration = (
   entries: EditEventDurationPickerStateEntries,
   duration: number
 ) => {
   "worklet"
-  const index = entries.findIndex(([d, _], i, entries) => {
-    if (i === entries.length - 1) return duration >= d
-    if (i === 0) return duration < entries[i + 1][0]
-    return duration >= d && duration < entries[i + 1][0]
-  })
+  const index = durationIndex(entries, duration)
   if (!entries[index]) return undefined
   if (index === entries.length - 1) return entries[index][1]
   return {

@@ -27,7 +27,7 @@ import {
   ExploreEventsRegion,
   XEROX_ALTO_DEFAULT_REGION,
   createDefaultMapRegion,
-  minRegionMeterRadius
+  maxRegionMeterRadius
 } from "./Region"
 import { SkeletonEventCard } from "./SkeletonEventCard"
 
@@ -43,7 +43,7 @@ export const eventsByRegion = async (
           latitude: region.latitude,
           longitude: region.longitude
         },
-        radius: minRegionMeterRadius(region)
+        radius: maxRegionMeterRadius(region) * 3
       },
       signal
     })
@@ -272,8 +272,8 @@ const styles = StyleSheet.create({
   sheetHeaderText: {
     flex: 1,
     backgroundColor: "white",
-    paddingHorizontal: 16,
-    paddingBottom: 8
+    paddingHorizontal: 24,
+    paddingBottom: 16
   },
   water: {
     width: "100%",

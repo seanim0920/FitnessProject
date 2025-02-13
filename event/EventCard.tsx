@@ -16,15 +16,17 @@ import { useCoreNavigation } from "@components/Navigation"
 
 export type EventCardProps = {
   event: ClientSideEvent
-  onJoined?: () => void
   onLeft?: () => void
   style?: StyleProp<ViewStyle>
 }
 
-const _EventCard = ({ event, onJoined, onLeft, style }: EventCardProps) => {
+const _EventCard = ({ event, onLeft, style }: EventCardProps) => {
   const { presentProfile, pushEventDetails, pushAttendeesList } =
     useCoreNavigation()
   const previewedAttendees = event.previewAttendees.slice(0, 3)
+  const attendeTextOffset =
+    previewedAttendees.length *
+    ATTENDEES_TEXT_SPACING[Math.max(0, previewedAttendees.length - 1)]
   return (
     <TiFFormCardView style={style}>
       <View style={styles.container}>
@@ -88,22 +90,14 @@ const _EventCard = ({ event, onJoined, onLeft, style }: EventCardProps) => {
               {event.attendeeCount > 3 ? (
                 <BoldFootnote
                   maxFontSizeMultiplier={FontScaleFactors.large}
-                  style={{
-                    left:
-                      previewedAttendees.length *
-                      ATTENDEES_TEXT_SPACING[previewedAttendees.length - 1]
-                  }}
+                  style={{ left: attendeTextOffset }}
                 >
                   + {event.attendeeCount - 3} Attending
                 </BoldFootnote>
               ) : (
                 <BoldFootnote
                   maxFontSizeMultiplier={FontScaleFactors.large}
-                  style={{
-                    left:
-                      previewedAttendees.length *
-                      ATTENDEES_TEXT_SPACING[previewedAttendees.length - 1]
-                  }}
+                  style={{ left: attendeTextOffset }}
                 >
                   Attending
                 </BoldFootnote>
@@ -113,7 +107,7 @@ const _EventCard = ({ event, onJoined, onLeft, style }: EventCardProps) => {
           <EventUserAttendanceButton
             event={event}
             maximumFontSizeMultiplier={FontScaleFactors.large}
-            onJoinSuccess={() => onJoined?.()}
+            onJoinSuccess={() => pushEventDetails(event.id)}
             onLeaveSuccess={() => onLeft?.()}
             size="small"
             style={styles.attendanceButton}

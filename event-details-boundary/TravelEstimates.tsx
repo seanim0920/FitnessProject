@@ -1,9 +1,13 @@
 import { AvatarMapMarkerView } from "@components/AvatarMapMarker"
+import { ExpandableMapSnippetView } from "@components/MapSnippetView"
+import { useCoreNavigation } from "@components/Navigation"
 import { BodyText, Caption, CaptionTitle, Headline } from "@components/Text"
 import { Ionicon, RoundedIonicon } from "@components/common/Icons"
+import { ClientSideEvent } from "@event/ClientSideEvent"
 import { openEventLocationInMaps } from "@event/LocationIdentifier"
 import { AppStyles } from "@lib/AppColorStyle"
 import { compactFormatDistance } from "@lib/DistanceFormatting"
+import { featureContext } from "@lib/FeatureContext"
 import { FontScaleFactors, useFontScale } from "@lib/Fonts"
 import { QueryHookOptions } from "@lib/ReactQuery"
 import { TiFDefaultLayoutTransition } from "@lib/Reanimated"
@@ -14,7 +18,7 @@ import {
   eventTravelEstimates
 } from "@modules/tif-travel-estimates"
 import { useQuery } from "@tanstack/react-query"
-import { EventAttendee, EventLocation } from "TiFShared/domain-models/Event"
+import { EventLocation } from "TiFShared/domain-models/Event"
 import { LocationCoordinate2D } from "TiFShared/domain-models/LocationCoordinate2D"
 import { dayjs } from "TiFShared/lib/Dayjs"
 import { metersToMiles } from "TiFShared/lib/MetricConversions"
@@ -24,7 +28,6 @@ import { LocationAccuracy } from "expo-location"
 import { CodedError } from "expo-modules-core"
 import { ReactNode, useState } from "react"
 import {
-  LayoutRectangle,
   Platform,
   StyleProp,
   StyleSheet,
@@ -32,8 +35,11 @@ import {
   View,
   ViewStyle
 } from "react-native"
-import MapView, { Marker } from "react-native-maps"
 import Animated, { FadeIn } from "react-native-reanimated"
+
+export const EventTravelEstimatesFeature = featureContext({
+  eventTravelEstimates
+})
 
 export type UseEventTravelEstimatesResult =
   | {
@@ -96,8 +102,7 @@ const compactFormatTravelEstimateDuration = (duration: duration.Duration) => {
  * `{ status: "unsupported" }`
  */
 export const useEventTravelEstimates = (
-  coordinate: LocationCoordinate2D,
-  loadTravelEstimates: typeof eventTravelEstimates
+  coordinate: LocationCoordinate2D
 ): UseEventTravelEstimatesResult => {
   const isSupported = Platform.OS !== "android"
   const userLocationQuery = useUserCoordinatesQuery(
@@ -107,7 +112,6 @@ export const useEventTravelEstimates = (
   const etaResults = useEventTravelEstimatesQuery(
     userLocationQuery.data?.coords!,
     coordinate,
-    loadTravelEstimates,
     { enabled: !!userLocationQuery.data && isSupported }
   )
   if (!isSupported) {
@@ -136,20 +140,20 @@ const resultForCodedError = (
 const useEventTravelEstimatesQuery = (
   userCoordinate: LocationCoordinate2D,
   eventCoordinate: LocationCoordinate2D,
-  loadTravelEstimates: typeof eventTravelEstimates,
   options?: QueryHookOptions<EventTravelEstimates>
 ) => {
+  const { eventTravelEstimates } = EventTravelEstimatesFeature.useContext()
   return useQuery({
     queryKey: ["event-travel-estimates", eventCoordinate, userCoordinate],
     queryFn: async ({ signal }) => {
-      return await loadTravelEstimates(userCoordinate, eventCoordinate, signal)
+      return await eventTravelEstimates(userCoordinate, eventCoordinate, signal)
     },
     ...options
   })
 }
 
 export type EventTravelEstimatesProps = {
-  host: EventAttendee
+  host: ClientSideEvent["host"]
   location: EventLocation
   result: UseEventTravelEstimatesResult
   style?: StyleProp<ViewStyle>
@@ -168,9 +172,8 @@ export const EventTravelEstimatesView = ({
   result,
   style
 }: EventTravelEstimatesProps) => {
-  const [overlayLayout, setOverlayLayout] = useState<
-    LayoutRectangle | undefined
-  >(undefined)
+  const [isExpanded, setIsExpanded] = useState(false)
+  const { presentProfile } = useCoreNavigation()
   return (
     <View style={[style]}>
       {result.status === "disabled" && (
@@ -193,84 +196,69 @@ export const EventTravelEstimatesView = ({
           precise ETA.
         </NoticeLabel>
       )}
-      <Animated.View
-        layout={TiFDefaultLayoutTransition}
-        style={styles.mapContainer}
-      >
-        {overlayLayout && (
-          <Animated.View entering={FadeIn.duration(300)}>
-            <MapView
-              style={[
-                styles.mapDimensions,
-                { height: Math.max(300, 200 + overlayLayout.height) }
-              ]}
-              loadingEnabled
-              zoomEnabled={false}
-              scrollEnabled={false}
-              initialRegion={{
-                ...location.coordinate,
-                latitudeDelta: 0.007,
-                longitudeDelta: 0.007
-              }}
-              mapPadding={{
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: overlayLayout.height + 16
-              }}
-              customMapStyle={[
-                {
-                  featureType: "poi",
-                  stylers: [{ visibility: "off" }]
-                },
-                {
-                  featureType: "transit",
-                  stylers: [{ visibility: "off" }]
-                }
-              ]}
-            >
-              <Marker coordinate={location.coordinate}>
-                <AvatarMapMarkerView
-                  name={host.name}
-                  imageURL={host.profileImageURL ?? undefined}
+      <Animated.View layout={TiFDefaultLayoutTransition}>
+        <ExpandableMapSnippetView
+          isExpanded={isExpanded}
+          onExpansionChanged={setIsExpanded}
+          region={{
+            ...location.coordinate,
+            latitudeDelta: 0.007,
+            longitudeDelta: 0.007
+          }}
+          overlay={
+            <View style={styles.overlay}>
+              <Headline
+                maxFontSizeMultiplier={FontScaleFactors.xxxLarge}
+                style={styles.directionsText}
+              >
+                Get Directions
+              </Headline>
+              <View style={styles.travelTypesContainer}>
+                <TravelTypeButton
+                  travelKey="walking"
+                  location={location}
+                  result={result}
+                  style={styles.travelTypeButton}
                 />
-              </Marker>
-            </MapView>
-          </Animated.View>
-        )}
-        <View style={styles.overlayContainer}>
-          <View
-            style={styles.overlay}
-            onLayout={(event) => setOverlayLayout(event.nativeEvent.layout)}
-          >
-            <Headline
-              maxFontSizeMultiplier={FontScaleFactors.xxxLarge}
-              style={styles.directionsText}
-            >
-              Get Directions
-            </Headline>
-            <View style={styles.travelTypesContainer}>
-              <TravelTypeButton
-                travelKey="walking"
-                location={location}
-                result={result}
-                style={styles.travelTypeButton}
-              />
-              <TravelTypeButton
-                travelKey="automobile"
-                location={location}
-                result={result}
-                style={styles.travelTypeButton}
-              />
-              <TravelTypeButton
-                travelKey="publicTransportation"
-                location={location}
-                result={result}
-                style={styles.travelTypeButton}
-              />
+                <TravelTypeButton
+                  travelKey="automobile"
+                  location={location}
+                  result={result}
+                  style={styles.travelTypeButton}
+                />
+                <TravelTypeButton
+                  travelKey="publicTransportation"
+                  location={location}
+                  result={result}
+                  style={styles.travelTypeButton}
+                />
+              </View>
             </View>
-          </View>
-        </View>
+          }
+          collapsedMapProps={{
+            customMapStyle: [
+              {
+                featureType: "poi",
+                stylers: [{ visibility: "off" }]
+              },
+              {
+                featureType: "transit",
+                stylers: [{ visibility: "off" }]
+              }
+            ]
+          }}
+          expandedMapProps={{ showsUserLocation: true }}
+          marker={
+            <AvatarMapMarkerView
+              name={host.name}
+              imageURL={host.profileImageURL ?? undefined}
+            />
+          }
+          onMarkerPressed={() => {
+            setIsExpanded(false)
+            presentProfile(host.id)
+          }}
+        />
       </Animated.View>
     </View>
   )
@@ -397,21 +385,14 @@ const TRAVEL_KEYS_INFO = {
 const styles = StyleSheet.create({
   mapContainer: {
     position: "relative",
-    marginHorizontal: 24
+    borderRadius: 12,
+    overflow: "hidden"
   },
   mapDimensions: {
     width: "100%",
     borderRadius: 12
   },
-  overlayContainer: {
-    paddingHorizontal: 16
-  },
   overlay: {
-    position: "absolute",
-    bottom: 16,
-    marginHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: "white",
     width: "100%",
     padding: 16
   },

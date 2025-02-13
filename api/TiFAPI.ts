@@ -1,11 +1,12 @@
 import { Auth } from "@aws-amplify/auth"
-import { API_URL } from "@env"
+import { API_URL, BUILD_TYPE } from "@env"
 import { CognitoUserSession } from "amazon-cognito-identity-js"
 import {
   APIMiddleware,
   TiFAPI,
   TiFAPIClientCreator,
   jwtMiddleware,
+  requestLoggingMiddleware,
   tifAPITransport,
   validateTiFAPIClientCall
 } from "TiFShared/api"
@@ -41,12 +42,17 @@ export const bearerToken = async (
  * Creates a {@link TiFAPITransport} that uses AWS Cognito as the backing
  * token storage.
  *
- * @param url the base url of the API.
+ * @param url The base url of the API.
+ * @param jwt A function to load the user's jwt token for the API.
  */
-export const awsTiFAPITransport = (url: URL): APIMiddleware => {
+export const awsTiFAPITransport = (
+  url: URL,
+  jwt: () => Promise<string | undefined> = bearerToken
+): APIMiddleware => {
   return chainMiddleware(
     validateTiFAPIClientCall,
-    jwtMiddleware(bearerToken),
+    requestLoggingMiddleware("tif"),
+    jwtMiddleware(jwt),
     tifAPITransport(url)
   )
 }
@@ -59,6 +65,8 @@ declare module "TiFShared/api" {
     productionInstance: TiFAPI
   }
 }
+
+console.log(API_URL)
 
 TiFAPI.productionInstance = TiFAPIClientCreator(
   awsTiFAPITransport(launchArguments.apiURL ?? new URL(API_URL))

@@ -1,26 +1,21 @@
-import { ChevronBackButton, XMarkBackButton } from "@components/Navigation"
-import { Headline } from "@components/Text"
+import { useBackButton, useTiFNavigation } from "@components/Navigation"
 import {
   EventAttendeesListView,
   useEventAttendeesList
 } from "@event-details-boundary/AttendeesList"
-import { StaticScreenProps, useNavigation } from "@react-navigation/native"
+import { EventDetailsContentView } from "@event-details-boundary/Content"
+import { EventDetailsView } from "@event-details-boundary/Details"
+import { useLoadEventDetails } from "@event/DetailsQuery"
+import { StaticScreenProps } from "@react-navigation/native"
 import { EventID } from "TiFShared/domain-models/Event"
 
 export const eventDetailsScreens = () => ({
   eventDetails: {
-    // TODO: - Remove this any.
-    options: ({ route }: any) => ({
-      headerLeft:
-        route.params?.method === "navigate"
-          ? ChevronBackButton
-          : XMarkBackButton,
-      headerTitle: "Event"
-    }),
+    options: () => ({ headerTitle: "Event" }),
     screen: EventDetailsScreen
   },
   eventAttendeesList: {
-    options: { headerLeft: ChevronBackButton, headerTitle: "Attendees" },
+    options: { headerTitle: "Attendees" },
     screen: AttendeesListScreen
   }
 })
@@ -28,7 +23,8 @@ export const eventDetailsScreens = () => ({
 type AttendeesListScreenProps = StaticScreenProps<{ id: EventID }>
 
 const AttendeesListScreen = ({ route }: AttendeesListScreenProps) => {
-  const navigation = useNavigation()
+  const navigation = useTiFNavigation()
+  useBackButton()
   return (
     <EventAttendeesListView
       state={useEventAttendeesList({ eventId: route.params.id })}
@@ -37,11 +33,17 @@ const AttendeesListScreen = ({ route }: AttendeesListScreenProps) => {
   )
 }
 
-type EventDetailsScreenProps = StaticScreenProps<{
-  id: EventID
-  method?: "navigate" | "replace"
-}>
+type EventDetailsScreenProps = StaticScreenProps<{ id: EventID }>
 
-const EventDetailsScreen = (_: EventDetailsScreenProps) => {
-  return <Headline>TODO: I am the event details</Headline>
+const EventDetailsScreen = ({ route }: EventDetailsScreenProps) => {
+  const navigation = useTiFNavigation()
+  useBackButton()
+  return (
+    <EventDetailsContentView
+      result={useLoadEventDetails(route.params.id)}
+      onExploreOtherEventsTapped={() => navigation.navigate("home")}
+    >
+      {(state) => <EventDetailsView state={state} />}
+    </EventDetailsContentView>
+  )
 }
