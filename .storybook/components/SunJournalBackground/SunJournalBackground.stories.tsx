@@ -2,19 +2,7 @@ import React, { useEffect, useMemo, useState } from "react"
 import { View, Text } from "react-native"
 import { StoryMeta } from "storybook/HelperTypes"
 import { Canvas, SkSize } from "@shopify/react-native-skia"
-import {
-  AFTERNOON_SKY_GRADIENT,
-  MID_DAY_SKY_GRADIENT,
-  MID_DAY_SUN_GRADIENT,
-  MORNING_DAY_SUN_GRADIENT,
-  MORNING_SKY_GRADIENT,
-  SUNRISE_SKY_GRADIENT,
-  SUNSET_SKY_GRADIENT,
-  SUNSET_SUN_GRADIENT,
-  SunBackground,
-  SunBackgroundDrawing,
-  sunRelativePosition
-} from "@journaling/SunBackground"
+import { SunBackground, SunBackgroundDrawing } from "@journaling/SunBackground"
 import {
   useDerivedValue,
   useSharedValue,
@@ -27,6 +15,7 @@ import {
   useSafeAreaInsets
 } from "react-native-safe-area-context"
 import { cloud } from "@journaling/Clouds"
+import { dateRange } from "TiFShared/domain-models/FixedDateRange"
 
 export const SunJournalBackgroundMeta: StoryMeta = {
   title: "SunJournalBackground"
@@ -78,36 +67,23 @@ const CLOUDS = [
   })
 ]
 
-const BACKGROUND: SunBackground = {
-  sun: {
-    relativePosition: sunRelativePosition(0),
-    gradient: MORNING_DAY_SUN_GRADIENT
-  },
-  skyGradient: SUNRISE_SKY_GRADIENT,
-  // skyGradient: MORNING_DAY_SUN_GRADIENT,
-  clouds: CLOUDS
-}
+const SUNRISE_DATE = new Date("2025-02-12T06:30:00")
+const SUNSET_DATE = new Date("2025-02-12T16:30:00")
+const DAY_RANGE = dateRange(SUNRISE_DATE, SUNSET_DATE)!
 
 const CanvasView = () => {
   const [size, setSize] = useState<SkSize>({ width: 0, height: 0 })
   const insets = useSafeAreaInsets()
-  const [backgroundX, setBackgroundX] = useState(0.3)
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     setBackgroundX((x) => (x >= 1 ? 0 : x + 0.1))
-  //   }, 500)
-  //   return () => clearInterval(interval)
-  // }, [])
+  const [time, setTime] = useState(0.5)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTime((x) => (x >= 1 ? 0 : x + 0.1))
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [])
   const background = useMemo(
-    () => ({
-      sun: {
-        relativePosition: sunRelativePosition(backgroundX),
-        gradient: MID_DAY_SUN_GRADIENT
-      },
-      skyGradient: AFTERNOON_SKY_GRADIENT,
-      clouds: CLOUDS
-    }),
-    [backgroundX]
+    () => ({ time, dayRange: DAY_RANGE, clouds: CLOUDS }),
+    [time]
   )
   return (
     <Canvas style={{ flex: 1 }} onLayout={(e) => setSize(e.nativeEvent.layout)}>
