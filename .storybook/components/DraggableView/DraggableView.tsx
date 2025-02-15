@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useWindowDimensions, ViewStyle } from 'react-native';
+import { useWindowDimensions, ViewProps } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
@@ -13,12 +13,10 @@ interface Position {
   y: number;
 }
 
-interface DraggableViewProps {
+type DraggableViewProps = ViewProps & {
   onGrab?: (position: Position) => void;
   onDrag?: (position: Position) => void;
   onRelease?: (position: Position) => void;
-  children?: React.ReactNode;
-  style?: ViewStyle;
   initialPosition?: Position | 'center';
 }
 

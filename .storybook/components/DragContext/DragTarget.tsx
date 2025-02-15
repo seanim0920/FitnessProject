@@ -1,20 +1,19 @@
 import React from 'react';
 import { StyleProp, View, ViewProps, ViewStyle } from 'react-native';
-import { useDragContext } from "./useDragContext";
+import { useDragContext, UseDragContextArgs } from "./useDragContext";
 
-type DragTargetProps = Omit<ViewProps, 'style'> & {
-  onHoverChange?: (isHovered: boolean) => void;
+export type DragTargetProps = ViewProps & {
   activeStyle?: StyleProp<ViewStyle>;
-  style?: StyleProp<ViewStyle>;
+  dragContextArgs?: UseDragContextArgs;
 };
 
 export const DragTarget = ({ 
-  onHoverChange,
   activeStyle,
   style,
+  dragContextArgs,
   ...props 
 }: DragTargetProps) => {
-  const { onLayout, isHovered } = useDragContext({ onHoverChange });
+  const { onLayout, isHovered } = useDragContext(dragContextArgs);
 
   return (
     <View

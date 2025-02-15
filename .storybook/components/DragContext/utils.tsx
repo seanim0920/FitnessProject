@@ -1,3 +1,4 @@
+
 // intersection.ts
 export type Point = {
   x: number;
@@ -21,12 +22,22 @@ export function isPointInTarget(point: Point, measurements: Measurements): boole
   );
 }
 
-export function findIntersectingTargets(
-  point: Point,
-  targets: Array<{ id: string; measurements: Measurements }>
-): string[] {
-  "worklet" // aw
-  return targets
-    .filter((target) => isPointInTarget(point, target.measurements))
-    .map((target) => target.id);
-}
+export const upsert = <T extends { id: string | number }>(
+  array: T[],
+  item: T
+): T[] => {
+  const index = array.findIndex(existing => existing.id === item.id);
+  if (index >= 0) {
+    const newArray = [...array];
+    newArray[index] = item;
+    return newArray;
+  }
+  return [...array, item];
+};
+
+export const remove = <T extends { id: string | number }>(
+  array: T[],
+  id: string | number
+): T[] => {
+  return array.filter(target => target.id !== id)
+};

@@ -2,6 +2,9 @@ import React, { useState } from "react";
 
 import DragTargetMeta, { Basic as DragTarget } from "../components/DragContext/DragContext.stories";
 
+import DragAndDropMeta, {
+  Basic as DragAndDrop
+} from "../components/DragAndDrop/DragAndDrop.stories";
 import DraggableViewMeta, {
   Basic as DraggableView
 } from "../components/DraggableView/DraggableView.stories";
@@ -37,9 +40,7 @@ import ContentReportingMeta, {
 import ContentTextMeta, {
   Basic as ContentTextBasic
 } from "../components/ContentText/ContextText.stories";
-import DragAndDropMeta, {
-  Basic as DragAndDrop
-} from "../components/DragAndDrop/DragAndDrop.stories";
+import DragAndDropSelectMeta from "../components/DragAndDropSelect/DragAndDropSelect.stories";
 import EventDetailsMeta, {
   Basic as EventDetailsBasic
 } from "../components/EventDetails/EventDetails.stories";
@@ -68,6 +69,7 @@ import EventSettingsDurationMeta, {
   Basic as EventSettingsDurationBasic
 } from "../components/SettingsScreen/EventSettingsDurations.stories";
 
+import { DragAndDropSelect } from ".storybook/components/DragAndDropSelect/DragAndDropSelect";
 import { sqliteLogHandler, sqliteLogs } from "@lib/Logging";
 import { InMemorySecureStore } from "@lib/SecureStore";
 import { dayjs } from "TiFShared/lib/Dayjs";
@@ -115,11 +117,13 @@ addLogHandler(
 // Create an array of stories
 const stories = [
   {
-    name: DragTargetMeta.title,
-    component: DragTarget,
-    args: DragTargetMeta.args
+    name: DragAndDropMeta.title,
+    component: DragAndDrop
   },
-
+  {
+    name: DragTargetMeta.title,
+    component: DragTarget
+  },
   {
     name: DraggableViewMeta.title,
     component: DraggableView,
@@ -131,9 +135,9 @@ const stories = [
     args: SunJournalBackgroundMeta.args
   },
   {
-    name: DragAndDropMeta.title,
-    component: DragAndDrop,
-    args: DragAndDropMeta.args
+    name: DragAndDropSelectMeta.title,
+    component: DragAndDropSelect,
+    args: DragAndDropSelectMeta.args
   },
   {
     name: MapSnippetMeta.title,

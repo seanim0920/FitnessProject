@@ -1,13 +1,22 @@
 
-import React, { useEffect, useRef } from 'react';
-import { View, ViewProps } from 'react-native';
-import { DragFeature } from '../DragContext/DragContext';
+import React from 'react';
+import { DragTarget, DragTargetProps } from '../DragContext/DragTarget';
+import { UseDragContextArgs } from '../DragContext/useDragContext';
+import { useDragAndDropContext, UseDragAndDropContextProps } from './useDragAndDropContext';
 
-type DragAndDropTargetProps = ViewProps & {
-  onHoverChange?: (isHovered: boolean) => void;
+type DragAndDropTargetProps = DragTargetProps & {
+  dragAndDropArgs?: UseDragAndDropContextProps;
+  dragContextArgs?: UseDragContextArgs;
 };
 
-// has listeners for token hover, token pick up, token drop
-export const DragAndDropTarget = ({ onHoverChange = () => {}, style, ...props }: DragAndDropTargetProps) => {
-  ...
+export const DragAndDropTarget = ({ dragAndDropArgs, dragContextArgs, ...props }: DragAndDropTargetProps) => {
+  return (
+    <DragTarget
+      dragContextArgs={{
+        useDragContextExtension: useDragAndDropContext(dragAndDropArgs),
+        ...dragContextArgs
+      }}
+      {...props}
+    />
+  )
 };
