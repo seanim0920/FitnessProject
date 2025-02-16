@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { DragProvider } from '../DragContext/DragContext';
-import { DragAndDropTarget } from "./DragAndDropTarget";
+import { DragAndDropTarget } from "./DragAndDropOption";
 import { DragAndDropToken } from "./DragAndDropToken";
 
 export const DragAndDropMeta = {

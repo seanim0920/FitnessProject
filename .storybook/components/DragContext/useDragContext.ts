@@ -10,11 +10,17 @@ export type DragContextExtensionArgs = {
   target: Target
   hoveredTargets: Target[]
   isHovered: boolean
+  hoverGesture: PanGesture
 }
 
 export type UseDragContextArgs<T = void> = {
   dragContextExtension?: (args: DragContextExtensionArgs) => T
-  panGesture?: PanGesture
+  isDraggable?: boolean
+}
+
+type BaseReturnType = {
+  isHovered: boolean
+  onLayout: (event: LayoutChangeEvent) => void
 }
 
 const DEFAULT_MEASUREMENT = {
@@ -26,12 +32,11 @@ const DEFAULT_MEASUREMENT = {
 
 export const useDragContext = <TExtension = void>({
   dragContextExtension,
-  panGesture
-}: UseDragContextArgs<TExtension> = {}) => {
+  isDraggable = false
+}: UseDragContextArgs<TExtension> = {}): BaseReturnType & TExtension => {
   const { registerTarget, unregisterTarget, hoveredTargets, hoverGesture } =
     useContext(DragContext)
 
-  const isDraggable = !!panGesture
   const targetId = useRef<string>(uuidString())
 
   const isHovered = hoveredTargets.some(
@@ -62,9 +67,11 @@ export const useDragContext = <TExtension = void>({
   return {
     isHovered,
     onLayout,
-    dragGesture: panGesture
-      ? hoverGesture.simultaneousWithExternalGesture(panGesture)
-      : hoverGesture,
-    ...dragContextExtension?.({ target, hoveredTargets, isHovered })
-  }
+    ...dragContextExtension?.({
+      target,
+      hoveredTargets,
+      isHovered,
+      hoverGesture
+    })
+  } as BaseReturnType & TExtension
 }

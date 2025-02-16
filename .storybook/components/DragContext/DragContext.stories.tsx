@@ -1,8 +1,9 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { DragProvider } from './DragContext';
 import { DragTarget } from './DragTarget';
+import { DraggableTarget } from "./DraggableTarget";
 
 export const DragTargetMeta = {
   title: "DragTarget",
@@ -39,6 +40,15 @@ export const Basic = () => {
             ]}
             activeStyle={styles.targetHovered}
           />
+          <DraggableTarget
+            style={[
+              styles.target,
+              styles.draggable
+            ]}
+            activeStyle={styles.targetHovered}
+          >
+            <Text>Drag me!</Text>
+          </DraggableTarget>
         </View>
       </DragProvider>
     </GestureHandlerRootView>
@@ -53,6 +63,20 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     position: 'relative',
+  },
+  draggable: {
+    position: 'absolute',
+    backgroundColor: '#e0e0e0',
+    padding: 20,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   target: {
     position: 'absolute',
