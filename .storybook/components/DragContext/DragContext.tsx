@@ -16,7 +16,7 @@ export const DragContext = createContext<{
   hoverGesture: Gesture.Pan()
 });
 
-const INTERSECTION_BUFFER = 10
+const INTERSECTION_BUFFER = 20
 
 export const DragProvider = ({ children }: { children: ReactNode }) => {
   const [registeredTargetsState, setRegisteredTargetsState] = useState<Target[]>([]); // NB: Needed to effectively update the shared value on mount / avoid race conditions

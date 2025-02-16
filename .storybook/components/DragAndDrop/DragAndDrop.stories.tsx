@@ -1,10 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated from 'react-native-reanimated';
 import { DragProvider } from '../DragContext/DragContext';
-import { DraggableView } from '../DraggableView/DraggableView';
-import { useDragAndDrop } from "./useDragAndDrop";
+import { DragAndDropSelect } from "./DragAndDropSelect";
 
 export const DragAndDropMeta = {
   title: "DragAndDrop",
@@ -12,76 +10,25 @@ export const DragAndDropMeta = {
 
 export default DragAndDropMeta;
 
-const DragAndDropSelectionExample = () => {
-  const {Paris, London, Berlin, Madrid, token} = useDragAndDrop(["Paris", "London", "Berlin", "Madrid"])
-
-  return (
-    <>
-      <Animated.View
-        onLayout={Paris.onLayout}
-        style={[
-          styles.target,
-          styles.blueTarget,
-          { bottom: 300, left: '10%', marginLeft: -50 },
-          token.isDragging && styles.tokenHovered,
-          token.isDragging && Paris.isSelecting && styles.targetHovered,
-          !token.isDragging && Paris.isSelecting && styles.targetSelected
-        ]}
-      />
-      <Animated.View
-        onLayout={London.onLayout}
-        style={[
-          styles.target,
-          styles.blueTarget,
-          { bottom: 300, left: '50%', marginLeft: -50 },
-          token.isDragging && styles.tokenHovered,
-          token.isDragging && London.isSelecting && styles.targetHovered,
-          !token.isDragging && London.isSelecting && styles.targetSelected
-        ]}
-      />
-      <Animated.View
-        onLayout={Berlin.onLayout}
-        style={[
-          styles.target,
-          styles.blueTarget,
-          { bottom: 300, left: '90%', marginLeft: -50 },
-          token.isDragging && styles.tokenHovered,
-          token.isDragging && Berlin.isSelecting && styles.targetHovered,
-          !token.isDragging && Berlin.isSelecting && styles.targetSelected
-        ]}
-      />
-      <Animated.View
-        onLayout={Madrid.onLayout}
-        style={[
-          styles.target,
-          styles.blueTarget,
-          { bottom: 500, left: '50%', marginLeft: -50 },
-          token.isDragging && styles.tokenHovered,
-          token.isDragging && Madrid.isSelecting && styles.targetHovered,
-          !token.isDragging && Madrid.isSelecting && styles.targetSelected
-        ]}
-      />
-      <DraggableView
-        draggable={{panGesture: token.dragGesture, panPosition: token.tokenPosition}}
-        style={[
-          styles.target,
-          styles.draggable,
-          token.isDragging && styles.targetHovered,
-          !token.isDragging && Madrid.isSelecting && styles.targetSelected,
-        ]}
-      >
-        <Text>Drag me!</Text>
-      </DraggableView>
-    </>
-  )
-}
-
 export const Basic = () => {
+  const [header, setHeader] = useState("Where is Paris")
+
   return (
     <GestureHandlerRootView style={styles.container}>
       <DragProvider>
-        <View style={styles.content}>      
-          <DragAndDropSelectionExample />
+        <View style={styles.content}>     
+          <Text style={{padding: 100, width:"100%", flex: 0.25, textAlign: "center", alignContent: "center", alignSelf: "center"}}>{header}</Text> 
+          <DragAndDropSelect onSelect={(option) => {
+            if (option?.isValid) {
+              setHeader("RIGHT!")
+            }
+            if (option?.isValid === false) {
+              setHeader("No you dumby")
+            }
+            if (!option) {
+              setHeader("Where is Paris")
+            }
+          }} options={[{id: "1", label: "Paris", isValid: true}, {id: "2", label: "Kentucky", isValid: false}]} />
         </View>
       </DragProvider>
     </GestureHandlerRootView>
@@ -150,6 +97,10 @@ const styles = StyleSheet.create({
   targetSelected: {
     borderWidth: 2,
     borderColor: '#faf',
+  },
+  targetInvalid: {
+    borderWidth: 2,
+    borderColor: '#0af',
   },
   hoverIndicator: {
     width: 20,

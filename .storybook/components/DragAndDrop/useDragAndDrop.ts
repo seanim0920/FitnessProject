@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react"
 import { PanGesture } from "react-native-gesture-handler"
-import { SharedValue } from "react-native-reanimated"
+import {
+  runOnJS,
+  SharedValue,
+  useAnimatedReaction
+} from "react-native-reanimated"
 import { useDragContext } from "../DragContext/useDragContext"
 import { useDraggableContext } from "../DragContext/useDraggableContext"
 
@@ -25,15 +29,25 @@ type DragAndDrop<T extends readonly string[]> = {
 }
 
 export const useDragAndDrop = <const T extends readonly string[]>(
-  options: T
+  options: T,
+  onSelect: (id?: string) => void
 ): DragAndDrop<T> => {
   const {
     extension: {
-      isPanning: { value: isDragging },
+      isPanning,
       panGesture: dragGesture,
       panPosition: tokenPosition
     }
   } = useDraggableContext()
+
+  const [isDragging, setIsDragging] = useState(false)
+
+  useAnimatedReaction(
+    () => isPanning.value,
+    (currentValue) => {
+      runOnJS(setIsDragging)(currentValue)
+    }
+  )
 
   const dragAndDropOptions = options.reduce<
     Partial<{ [K in T[number]]: DragAndDropOption }>
@@ -42,14 +56,22 @@ export const useDragAndDrop = <const T extends readonly string[]>(
     const [isSelecting, setIsSelecting] = useState(false)
 
     useEffect(() => {
-      if (isDragging) {
+      if (isPanning.value) {
+        onSelect()
+      }
+      if (isPanning.value) {
         if (isHovering) {
           setIsSelecting(true)
         } else {
           setIsSelecting(false)
         }
       }
-    }, [isDragging, isHovering])
+      if (!isPanning.value) {
+        if (isSelecting) {
+          onSelect(option)
+        }
+      }
+    }, [isPanning.value, isHovering])
 
     return {
       ...acc,
