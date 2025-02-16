@@ -23,6 +23,7 @@ const DragAndDropSelectionExample = () => {
           styles.target,
           styles.blueTarget,
           { bottom: 300, left: '10%', marginLeft: -50 },
+          token.isDragging && styles.tokenHovered,
           token.isDragging && Paris.isSelecting && styles.targetHovered,
           !token.isDragging && Paris.isSelecting && styles.targetSelected
         ]}
@@ -33,6 +34,7 @@ const DragAndDropSelectionExample = () => {
           styles.target,
           styles.blueTarget,
           { bottom: 300, left: '50%', marginLeft: -50 },
+          token.isDragging && styles.tokenHovered,
           token.isDragging && London.isSelecting && styles.targetHovered,
           !token.isDragging && London.isSelecting && styles.targetSelected
         ]}
@@ -43,6 +45,7 @@ const DragAndDropSelectionExample = () => {
           styles.target,
           styles.blueTarget,
           { bottom: 300, left: '90%', marginLeft: -50 },
+          token.isDragging && styles.tokenHovered,
           token.isDragging && Berlin.isSelecting && styles.targetHovered,
           !token.isDragging && Berlin.isSelecting && styles.targetSelected
         ]}
@@ -53,6 +56,7 @@ const DragAndDropSelectionExample = () => {
           styles.target,
           styles.blueTarget,
           { bottom: 500, left: '50%', marginLeft: -50 },
+          token.isDragging && styles.tokenHovered,
           token.isDragging && Madrid.isSelecting && styles.targetHovered,
           !token.isDragging && Madrid.isSelecting && styles.targetSelected
         ]}
@@ -62,7 +66,8 @@ const DragAndDropSelectionExample = () => {
         style={[
           styles.target,
           styles.draggable,
-          token.isDragging && styles.targetHovered
+          token.isDragging && styles.targetHovered,
+          !token.isDragging && Madrid.isSelecting && styles.targetSelected,
         ]}
       >
         <Text>Drag me!</Text>
@@ -133,6 +138,10 @@ const styles = StyleSheet.create({
   },
   greenTarget: {
     backgroundColor: '#c8e6c9',
+  },
+  tokenHovered: {
+    borderWidth: 2,
+    borderColor: '#ff0',
   },
   targetHovered: {
     borderWidth: 2,
