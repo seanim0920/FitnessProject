@@ -15,5 +15,4 @@ export type Measurements = {
 export type Target = {
   id: string
   measurements: SharedValue<Measurements>
-  isDraggable: boolean
 }

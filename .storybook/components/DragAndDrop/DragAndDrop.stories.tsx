@@ -1,9 +1,10 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated from 'react-native-reanimated';
 import { DragProvider } from '../DragContext/DragContext';
-import { DragAndDropTarget } from "./DragAndDropOption";
-import { DragAndDropToken } from "./DragAndDropToken";
+import { DraggableView } from '../DraggableView/DraggableView';
+import { useDragAndDrop } from "./useDragAndDrop";
 
 export const DragAndDropMeta = {
   title: "DragAndDrop",
@@ -11,43 +12,71 @@ export const DragAndDropMeta = {
 
 export default DragAndDropMeta;
 
+const DragAndDropSelectionExample = () => {
+  const {Paris, London, Berlin, Madrid, token} = useDragAndDrop(["Paris", "London", "Berlin", "Madrid"])
+
+  return (
+    <>
+      <Animated.View
+        onLayout={Paris.onLayout}
+        style={[
+          styles.target,
+          styles.blueTarget,
+          { bottom: 300, left: '10%', marginLeft: -50 },
+          token.isDragging && Paris.isSelecting && styles.targetHovered,
+          !token.isDragging && Paris.isSelecting && styles.targetSelected
+        ]}
+      />
+      <Animated.View
+        onLayout={London.onLayout}
+        style={[
+          styles.target,
+          styles.blueTarget,
+          { bottom: 300, left: '50%', marginLeft: -50 },
+          token.isDragging && London.isSelecting && styles.targetHovered,
+          !token.isDragging && London.isSelecting && styles.targetSelected
+        ]}
+      />
+      <Animated.View
+        onLayout={Berlin.onLayout}
+        style={[
+          styles.target,
+          styles.blueTarget,
+          { bottom: 300, left: '90%', marginLeft: -50 },
+          token.isDragging && Berlin.isSelecting && styles.targetHovered,
+          !token.isDragging && Berlin.isSelecting && styles.targetSelected
+        ]}
+      />
+      <Animated.View
+        onLayout={Madrid.onLayout}
+        style={[
+          styles.target,
+          styles.blueTarget,
+          { bottom: 500, left: '50%', marginLeft: -50 },
+          token.isDragging && Madrid.isSelecting && styles.targetHovered,
+          !token.isDragging && Madrid.isSelecting && styles.targetSelected
+        ]}
+      />
+      <DraggableView
+        draggable={{panGesture: token.dragGesture, panPosition: token.tokenPosition}}
+        style={[
+          styles.target,
+          styles.draggable,
+          token.isDragging && styles.targetHovered
+        ]}
+      >
+        <Text>Drag me!</Text>
+      </DraggableView>
+    </>
+  )
+}
+
 export const Basic = () => {
   return (
     <GestureHandlerRootView style={styles.container}>
       <DragProvider>
         <View style={styles.content}>      
-          <DragAndDropTarget
-            style={[
-              styles.target,
-              styles.redTarget,
-              { top: 100, left: 50 },
-            ]}
-            activeStyle={styles.targetHovered}
-          />
-
-          <DragAndDropTarget
-            style={[
-              styles.target,
-              styles.blueTarget,
-              { top: 100, right: 50 },
-            ]}
-            activeStyle={styles.targetHovered}
-          />
-
-          <DragAndDropTarget
-            style={[
-              styles.target,
-              styles.greenTarget,
-              { bottom: 100, left: '50%', marginLeft: -50 },
-            ]}
-            activeStyle={styles.targetHovered}
-          />
-
-          <DragAndDropToken 
-            style={styles.token}
-          >
-            <Text>Drag me!</Text>
-          </DragAndDropToken>
+          <DragAndDropSelectionExample />
         </View>
       </DragProvider>
     </GestureHandlerRootView>
@@ -62,6 +91,20 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     position: 'relative',
+  },
+  draggable: {
+    position: 'absolute',
+    backgroundColor: '#e0e0e0',
+    padding: 20,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   target: {
     position: 'absolute',
@@ -94,6 +137,10 @@ const styles = StyleSheet.create({
   targetHovered: {
     borderWidth: 2,
     borderColor: '#000',
+  },
+  targetSelected: {
+    borderWidth: 2,
+    borderColor: '#faf',
   },
   hoverIndicator: {
     width: 20,

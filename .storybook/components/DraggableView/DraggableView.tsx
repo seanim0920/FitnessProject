@@ -1,27 +1,25 @@
 import React from 'react';
-import { useWindowDimensions, ViewProps } from 'react-native';
-import { GestureDetector } from 'react-native-gesture-handler';
+import { LayoutChangeEvent, ViewProps } from 'react-native';
+import { GestureDetector, PanGesture } from 'react-native-gesture-handler';
 import Animated, {
+  SharedValue,
   useAnimatedStyle
 } from 'react-native-reanimated';
-import { Point } from '../DragContext/types';
-import { usePanGesture } from "./usePanGesture";
 
-type DraggableViewProps = ViewProps & {
-  initialPosition?: Point;
+export type Draggable = {
+  onLayout?: (event: LayoutChangeEvent) => void;
+  panGesture: PanGesture;
+  panPosition: {
+      x: SharedValue<number>;
+      y: SharedValue<number>;
+  };
 }
 
 export const DraggableView = ({
-  initialPosition,
   children,
   style,
-}: DraggableViewProps) => {
-  const { width, height } = useWindowDimensions();
-  const {panGesture, panPosition} = usePanGesture({
-    x: initialPosition?.x ?? width / 2 - 50,
-    y: initialPosition?.y ?? height / 2 - 50,
-  });
-
+  draggable: {onLayout, panGesture, panPosition}
+}: ViewProps & {draggable: Draggable}) => {
   const animatedStyle = useAnimatedStyle(() => {
     return {
       transform: [
@@ -34,6 +32,7 @@ export const DraggableView = ({
   return (
     <GestureDetector gesture={panGesture}>
       <Animated.View 
+        onLayout={onLayout}
         style={[
           style,
           animatedStyle

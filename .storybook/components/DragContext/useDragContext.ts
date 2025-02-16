@@ -9,18 +9,18 @@ import { Measurements, Target } from "./types"
 export type DragContextExtensionArgs = {
   target: Target
   hoveredTargets: Target[]
-  isHovered: boolean
+  isHovering: boolean
   hoverGesture: PanGesture
 }
 
 export type UseDragContextArgs<T = void> = {
   dragContextExtension?: (args: DragContextExtensionArgs) => T
-  isDraggable?: boolean
 }
 
-type BaseReturnType = {
-  isHovered: boolean
+type DragState<T> = {
+  isHovering: boolean
   onLayout: (event: LayoutChangeEvent) => void
+  extension: T
 }
 
 const DEFAULT_MEASUREMENT = {
@@ -31,15 +31,14 @@ const DEFAULT_MEASUREMENT = {
 }
 
 export const useDragContext = <TExtension = void>({
-  dragContextExtension,
-  isDraggable = false
-}: UseDragContextArgs<TExtension> = {}): BaseReturnType & TExtension => {
+  dragContextExtension
+}: UseDragContextArgs<TExtension> = {}): DragState<TExtension> => {
   const { registerTarget, unregisterTarget, hoveredTargets, hoverGesture } =
     useContext(DragContext)
 
   const targetId = useRef<string>(uuidString())
 
-  const isHovered = hoveredTargets.some(
+  const isHovering = hoveredTargets.some(
     (target) => target.id === targetId.current
   )
 
@@ -47,8 +46,7 @@ export const useDragContext = <TExtension = void>({
 
   const target: Target = {
     id: targetId.current,
-    measurements,
-    isDraggable
+    measurements
   }
 
   const onLayout = useCallback((event: LayoutChangeEvent) => {
@@ -56,22 +54,21 @@ export const useDragContext = <TExtension = void>({
   }, [])
 
   useEffect(() => {
-    console.log("trying to register target ", target.id)
     registerTarget(target)
 
     return () => {
       unregisterTarget(targetId.current)
     }
-  }, [isDraggable])
+  }, [])
 
   return {
-    isHovered,
+    isHovering,
     onLayout,
-    ...dragContextExtension?.({
+    extension: dragContextExtension?.({
       target,
       hoveredTargets,
-      isHovered,
+      isHovering,
       hoverGesture
-    })
-  } as BaseReturnType & TExtension
+    }) as TExtension
+  }
 }

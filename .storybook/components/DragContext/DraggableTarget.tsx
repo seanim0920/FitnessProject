@@ -1,45 +1,38 @@
-import React from 'react';
-import { GestureDetector } from 'react-native-gesture-handler';
-import Animated, {
-  useAnimatedStyle
-} from 'react-native-reanimated';
-import { usePanGesture } from "../DraggableView/usePanGesture";
-import { DragTargetProps } from "./DragTarget";
-import { useDragContext } from './useDragContext';
+import React, { useState } from 'react';
+import { StyleProp, Text, ViewProps, ViewStyle } from 'react-native';
+import { runOnJS, useAnimatedReaction } from 'react-native-reanimated';
+import { DraggableView } from '../DraggableView/DraggableView';
+import { useDraggableContext } from "./useDraggableContext";
 
-type DraggableTargetProps = DragTargetProps
+export type DraggableTargetProps = ViewProps & {
+  activeStyle?: StyleProp<ViewStyle>;
+};
 
-export const DraggableTarget = ({
-  children,
+export const DraggableTarget = ({ 
+  activeStyle,
   style,
+  ...props 
 }: DraggableTargetProps) => {
-  const {onLayout, panGesture, panPosition} = useDragContext({
-    dragContextExtension: ({target, hoverGesture}) => usePanGesture({
-      x: target.measurements.value.x,
-      y: target.measurements.value.y,
-    }, hoverGesture)
-  })
+  const { extension: {panGesture, panPosition, isPanning} } = useDraggableContext();
+  const [isDragging, setIsDragging] = useState(false)
 
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { translateX: panPosition.x.value },
-        { translateY: panPosition.y.value },
-      ],
-    };
-  });
+  useAnimatedReaction(
+    () => isPanning.value,
+    (currentValue) => {
+      runOnJS(setIsDragging)(currentValue);
+    }
+  );
 
   return (
-    <GestureDetector gesture={panGesture}>
-      <Animated.View 
-        onLayout={onLayout}
-        style={[
-          style,
-          animatedStyle
-        ]}
-      >
-        {children}
-      </Animated.View>
-    </GestureDetector>
+    <DraggableView
+      draggable={{panGesture, panPosition}}
+      style={[
+        style,
+        isDragging && activeStyle
+      ]}
+      {...props}
+    >
+      <Text>Drag me!</Text>
+    </DraggableView>
   );
-};
+}

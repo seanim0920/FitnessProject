@@ -1,26 +1,25 @@
 import React from 'react';
-import { StyleProp, View, ViewProps, ViewStyle } from 'react-native';
-import { useDragContext, UseDragContextArgs } from './useDragContext';
+import { StyleProp, ViewProps, ViewStyle } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { useDragContext } from './useDragContext';
 
 export type DragTargetProps = ViewProps & {
   activeStyle?: StyleProp<ViewStyle>;
-  dragContextArgs?: UseDragContextArgs;
 };
 
 export const DragTarget = ({ 
   activeStyle,
   style,
-  dragContextArgs,
   ...props 
 }: DragTargetProps) => {
-  const { onLayout, isHovered } = useDragContext(dragContextArgs);
+  const { onLayout, isHovering } = useDragContext();
 
   return (
-    <View
+    <Animated.View
       onLayout={onLayout}
       style={[
         style,
-        isHovered && activeStyle
+        isHovering && activeStyle
       ]}
       {...props} 
     />
