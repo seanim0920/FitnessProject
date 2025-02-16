@@ -1,21 +1,21 @@
 import React from 'react';
-import { useWindowDimensions, ViewProps } from 'react-native';
-import { GestureDetector } from 'react-native-gesture-handler';
+import { useWindowDimensions } from 'react-native';
 import Animated, {
   useAnimatedStyle
 } from 'react-native-reanimated';
-import { Point } from '../DragContext/types';
-import { usePanGesture } from "./usePanGesture";
+import { usePanGesture } from "../DraggableView/usePanGesture";
+import { DragTarget, DragTargetProps } from "./DragTarget";
+import { Point } from './types';
 
-type DraggableViewProps = ViewProps & {
+type DraggableTargetProps = DragTargetProps & {
   initialPosition?: Point;
 }
 
-export const DraggableView = ({
+export const DraggableTarget = ({
   initialPosition,
   children,
-  style,
-}: DraggableViewProps) => {
+  ...props
+}: DraggableTargetProps) => {
   const { width, height } = useWindowDimensions();
   const {panGesture, panPosition} = usePanGesture({
     x: initialPosition?.x ?? width / 2 - 50,
@@ -32,15 +32,14 @@ export const DraggableView = ({
   });
 
   return (
-    <GestureDetector gesture={panGesture}>
-      <Animated.View 
-        style={[
-          style,
-          animatedStyle
-        ]}
-      >
+    <Animated.View 
+      style={[
+        animatedStyle
+      ]}
+    >
+      <DragTarget dragContextArgs={{panGesture}} {...props}>
         {children}
-      </Animated.View>
-    </GestureDetector>
+      </DragTarget>
+    </Animated.View>
   );
 };

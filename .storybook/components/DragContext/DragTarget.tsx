@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleProp, View, ViewProps, ViewStyle } from 'react-native';
-import { useDragContext, UseDragContextArgs } from "./useDragContext";
+import { useDragContext, UseDragContextArgs } from './useDragContext';
 
 export type DragTargetProps = ViewProps & {
   activeStyle?: StyleProp<ViewStyle>;
@@ -25,4 +25,4 @@ export const DragTarget = ({
       {...props} 
     />
   );
-};
+}

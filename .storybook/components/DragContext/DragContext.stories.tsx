@@ -19,20 +19,18 @@ export const Basic = () => {
             style={[
               styles.target,
               styles.redTarget,
-              { top: 100, left: 50 },
+              { bottom: 500, left: '50%', marginLeft: -50 },
             ]}
             activeStyle={styles.targetHovered}
           />
-
           <DragTarget
             style={[
               styles.target,
               styles.blueTarget,
-              { top: 100, right: 50 },
+              { bottom: 300, left: '50%', marginLeft: -50 },
             ]}
             activeStyle={styles.targetHovered}
           />
-
           <DragTarget
             style={[
               styles.target,

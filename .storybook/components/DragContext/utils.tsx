@@ -1,24 +1,21 @@
+import type { Measurements, Point } from "./types";
 
-// intersection.ts
-export type Point = {
-  x: number;
-  y: number;
-};
+export const isPointInTarget = (
+  point: Point, 
+  measurements: Measurements, 
+  radius: number = 0
+): boolean => {
+  "worklet"
+  const minX = measurements.x - radius;
+  const maxX = measurements.x + measurements.width + radius;
+  const minY = measurements.y - radius;
+  const maxY = measurements.y + measurements.height + radius;
 
-export type Measurements = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
-
-export function isPointInTarget(point: Point, measurements: Measurements): boolean {
-  "worklet" // aw
   return (
-    point.x >= measurements.x &&
-    point.x <= measurements.x + measurements.width &&
-    point.y >= measurements.y &&
-    point.y <= measurements.y + measurements.height
+    point.x >= minX &&
+    point.x <= maxX &&
+    point.y >= minY &&
+    point.y <= maxY
   );
 }
 

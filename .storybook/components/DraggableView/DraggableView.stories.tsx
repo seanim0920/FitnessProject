@@ -14,8 +14,9 @@ export const Basic = () => (
   <GestureHandlerRootView>
     <View style={{ width: "100%", height: "100%", flex: 1 }}>
       <DraggableView 
-        style={{ 
-          backgroundColor: '#fff',
+        style={{
+          position: 'absolute',
+          backgroundColor: '#e0e0e0',
           padding: 20,
           borderRadius: 8,
           shadowColor: "#000",
@@ -29,23 +30,6 @@ export const Basic = () => (
         }}
       >
         <Text>Drag me!</Text>
-      </DraggableView>
-    </View>
-  </GestureHandlerRootView>
-);
-
-export const CustomPosition = () => (
-  <GestureHandlerRootView>
-    <View style={{ width: "100%", height: "100%", flex: 1 }}>
-      <DraggableView 
-        initialPosition={{ x: 100, y: 100 }}
-        style={{ 
-          backgroundColor: '#fff',
-          padding: 20,
-          borderRadius: 8,
-        }}
-      >
-        <Text>Custom position!</Text>
       </DraggableView>
     </View>
   </GestureHandlerRootView>
