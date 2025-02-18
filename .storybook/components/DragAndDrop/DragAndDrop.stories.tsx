@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { DragProvider } from '../DragContext/DragContext';
+import { HoverProvider } from '../HoverContext/HoverContext';
 import { DragAndDropSelect } from "./DragAndDropSelect";
 
 export const DragAndDropMeta = {
@@ -15,7 +15,7 @@ export const Basic = () => {
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      <DragProvider>
+      <HoverProvider>
         <View style={styles.content}>     
           <Text style={{padding: 100, width:"100%", flex: 0.25, textAlign: "center", alignContent: "center", alignSelf: "center"}}>{header}</Text> 
           <DragAndDropSelect onSelect={(option) => {
@@ -30,7 +30,7 @@ export const Basic = () => {
             }
           }} options={[{id: "1", label: "Paris", isValid: true}, {id: "2", label: "Kentucky", isValid: false}]} />
         </View>
-      </DragProvider>
+      </HoverProvider>
     </GestureHandlerRootView>
   );
 };

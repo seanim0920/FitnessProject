@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-import DragTargetMeta, { Basic as DragTarget } from "../components/DragContext/DragContext.stories";
+import DragTargetMeta, { Basic as DragTarget } from "../components/HoverContext/HoverContext.stories";
 
 import DragAndDropMeta, {
   Basic as DragAndDrop
@@ -40,7 +40,6 @@ import ContentReportingMeta, {
 import ContentTextMeta, {
   Basic as ContentTextBasic
 } from "../components/ContentText/ContextText.stories";
-import DragAndDropSelectMeta from "../components/DragAndDropSelect/DragAndDropSelect.stories";
 import EventDetailsMeta, {
   Basic as EventDetailsBasic
 } from "../components/EventDetails/EventDetails.stories";
@@ -69,7 +68,7 @@ import EventSettingsDurationMeta, {
   Basic as EventSettingsDurationBasic
 } from "../components/SettingsScreen/EventSettingsDurations.stories";
 
-import { DragAndDropSelect } from ".storybook/components/DragAndDropSelect/DragAndDropSelect";
+import ShieldDefenseMeta, { Basic as ShieldDefense } from ".storybook/components/ShieldDefense/ShieldDefense.stories";
 import { sqliteLogHandler, sqliteLogs } from "@lib/Logging";
 import { InMemorySecureStore } from "@lib/SecureStore";
 import { dayjs } from "TiFShared/lib/Dayjs";
@@ -135,9 +134,8 @@ const stories = [
     args: SunJournalBackgroundMeta.args
   },
   {
-    name: DragAndDropSelectMeta.title,
-    component: DragAndDropSelect,
-    args: DragAndDropSelectMeta.args
+    name: ShieldDefenseMeta.title,
+    component: ShieldDefense
   },
   {
     name: MapSnippetMeta.title,

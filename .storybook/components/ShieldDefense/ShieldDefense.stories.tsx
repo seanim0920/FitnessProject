@@ -1,55 +1,20 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { DragProvider } from './DragContext';
-import { DragTarget } from './DragTarget';
-import { DraggableTarget } from "./DraggableTarget";
+import { DragProvider } from '../HoverContext/HoverContext';
+import ShieldDefenseGame from './ShieldDefense';
 
-export const DragTargetMeta = {
-  title: "DragTarget",
+export const ShieldDefenseMeta = {
+  title: "ShieldDefense",
 };
 
-export default DragTargetMeta;
+export default ShieldDefenseMeta;
 
 export const Basic = () => {
   return (
     <GestureHandlerRootView style={styles.container}>
       <DragProvider>
-        <View style={styles.content}>
-          <DragTarget
-            style={[
-              styles.target,
-              styles.redTarget,
-              { bottom: 500, left: '50%', marginLeft: -50 },
-            ]}
-            activeStyle={styles.targetHovered}
-          />
-          <DragTarget
-            style={[
-              styles.target,
-              styles.blueTarget,
-              { bottom: 300, left: '50%', marginLeft: -50 },
-            ]}
-            activeStyle={styles.targetHovered}
-          />
-          <DragTarget
-            style={[
-              styles.target,
-              styles.greenTarget,
-              { bottom: 100, left: '50%', marginLeft: -50 },
-            ]}
-            activeStyle={styles.targetHovered}
-          />
-          <DraggableTarget
-            style={[
-              styles.target,
-              styles.draggable
-            ]}
-            activeStyle={styles.targetHovered}
-          >
-            <Text>Drag me!</Text>
-          </DraggableTarget>
-        </View>
+        <ShieldDefenseGame />
       </DragProvider>
     </GestureHandlerRootView>
   );

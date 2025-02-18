@@ -1,6 +1,13 @@
+import { useState } from "react"
 import { Gesture, PanGesture } from "react-native-gesture-handler"
-import { useSharedValue } from "react-native-reanimated"
-import { Point } from "../DragContext/types"
+import { runOnJS, SharedValue, useSharedValue } from "react-native-reanimated"
+import { Point } from "../HoverContext/types"
+
+export type Pannable = {
+  panGesture: PanGesture
+  panPosition: { x: SharedValue<number>; y: SharedValue<number> }
+  isPanning: boolean
+}
 
 export const usePanGesture = (
   initialPosition?: Point,
@@ -8,7 +15,7 @@ export const usePanGesture = (
 ) => {
   const panX = useSharedValue(initialPosition?.x ?? 0)
   const panY = useSharedValue(initialPosition?.y ?? 0)
-  const isPanning = useSharedValue(false)
+  const [isPanning, setIsPanning] = useState(false)
 
   const startX = useSharedValue(0)
   const startY = useSharedValue(0)
@@ -18,7 +25,7 @@ export const usePanGesture = (
       "worklet"
       startX.value = panX.value
       startY.value = panY.value
-      isPanning.value = true
+      runOnJS(setIsPanning)(true)
     })
     .onUpdate(({ translationX, translationY }) => {
       "worklet"
@@ -27,11 +34,11 @@ export const usePanGesture = (
     })
     .onEnd(() => {
       "worklet"
-      isPanning.value = false
+      runOnJS(setIsPanning)(false)
     })
     .onFinalize(() => {
       "worklet"
-      isPanning.value = false
+      runOnJS(setIsPanning)(false)
     })
 
   if (externalGesture) {

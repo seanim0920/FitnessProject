@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, useWindowDimensions, View } from "react-native";
+import { Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StoryMeta } from "storybook/HelperTypes";
 import { DraggableView } from "./DraggableView";
@@ -12,11 +12,7 @@ export const DraggableViewMeta: StoryMeta = {
 export default DraggableViewMeta;
 
 export const Basic = () => {
-  const { width, height } = useWindowDimensions();
-  const draggable = usePanGesture({
-    x: width / 2 - 50,
-    y: height / 2 - 50,
-  });
+  const draggable = usePanGesture();
 
   return (
     <GestureHandlerRootView>
@@ -25,6 +21,8 @@ export const Basic = () => {
           draggable={draggable}
           style={{
             position: 'absolute',
+            top: "50%",
+            left: "50%",
             backgroundColor: '#e0e0e0',
             padding: 20,
             borderRadius: 8,

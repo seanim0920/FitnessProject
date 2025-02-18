@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { DraggableView } from '../DraggableView/DraggableView';
 import { useDragAndDrop } from "./useDragAndDrop";
@@ -27,44 +27,53 @@ type GenericDragAndDropProps = {
   onDragEnd?: () => void;
 };
 
-type StyleWithPosition = ViewStyle & {
-  bottom: number;
-  left: number | string;
-  marginLeft: number;
-};
-
 export const DragAndDropSelect = ({
   options,
   columns = 3,
-  spacing = { vertical: 200, horizontal: 40 },
+  spacing = { vertical: 20, horizontal: 20 },
   draggableLabel = "Drag me!",
   onSelect
 }: GenericDragAndDropProps) => {
   const optionIds = options.map(opt => opt.id);
-  const dropTargets = useDragAndDrop(optionIds, (id) => onSelect?.(id ? options.find(option => id === option.id) : undefined));
-  const { token, ...targets } = dropTargets;
+  const dragTargets = useDragAndDrop(optionIds, (id) => 
+    onSelect?.(id ? options.find(option => id === option.id) : undefined)
+  );
+  const { token, ...targets } = dragTargets;
+  const windowWidth = Dimensions.get('window').width;
 
-  const calculatePosition = (index: number): { bottom: number; left: string } => {
-    if (options[index].position) {
-      return {
-        bottom: options[index].position!.bottom,
-        left: `${options[index].position!.left}%`,
-      };
-    }
+  // Calculate grid dimensions
+  const targetSize = 100; // Width and height of each target
+  const gridPadding = 20;
+  const availableWidth = windowWidth - (gridPadding * 2);
+  const itemSpacing = spacing.horizontal;
+  const calculatedColumns = Math.min(
+    columns,
+    Math.floor((availableWidth + itemSpacing) / (targetSize + itemSpacing))
+  );
+  
+  const rows = Math.ceil(options.length / calculatedColumns);
 
-    const row = Math.floor(index / columns);
-    const col = index % columns;
+  // Calculate grid container height
+  const gridHeight = (rows * (targetSize + spacing.vertical)) - spacing.vertical;
+
+  const calculateGridPosition = (index: number) => {
+    const row = Math.floor(index / calculatedColumns);
+    const col = index % calculatedColumns;
+    
+    const totalWidthPerItem = targetSize + spacing.horizontal;
+    const totalWidth = (calculatedColumns * totalWidthPerItem) - spacing.horizontal;
+    const startX = (windowWidth - totalWidth) / 2;
     
     return {
-      bottom: 300 + (row * spacing.vertical),
-      left: `${(100 / (columns + 1)) * (col + 1)}%`,
+      left: startX + (col * (targetSize + spacing.horizontal)),
+      top: row * (targetSize + spacing.vertical)
     };
   };
 
   return (
-    <>
+    <View style={[styles.gridContainer, { height: gridHeight + 100 }]}>
       {options.map((option, index) => {
-        const position = calculatePosition(index);
+        const position = calculateGridPosition(index);
         return (
           <Animated.View
             key={option.id}
@@ -73,13 +82,14 @@ export const DragAndDropSelect = ({
               styles.target,
               styles.blueTarget,
               {
-                bottom: position.bottom,
                 left: position.left,
-                marginLeft: -50,
-              } as StyleWithPosition,
-              token.isDragging && styles.tokenHovered,
-              token.isDragging && targets[option.id].isSelecting && styles.targetHovered,
-              !token.isDragging && targets[option.id].isSelecting && 
+                top: position.top,
+                width: targetSize,
+                height: targetSize,
+              },
+              token.isPanning && styles.tokenHovered,
+              token.isPanning && targets[option.id].isSelecting && styles.targetHovered,
+              !token.isPanning && targets[option.id].isSelecting && 
                 (option.isValid ? styles.targetSelected : styles.targetInvalid)
             ]}
           >
@@ -92,49 +102,36 @@ export const DragAndDropSelect = ({
       
       <DraggableView
         draggable={{
-          panGesture: token.dragGesture,
-          panPosition: token.tokenPosition
+          panGesture: token.panGesture,
+          panPosition: token.panPosition
         }}
         style={[
           styles.target,
           styles.draggable,
-          token.isDragging && styles.targetHovered,
-          {left: "50%", bottom: "10%"}
+          token.isPanning && styles.tokenHovered,
+          {
+            position: 'absolute',
+            left: windowWidth / 2 - targetSize / 2,
+            bottom: 20,
+            width: targetSize,
+            height: targetSize,
+          }
         ]}
       >
         <Text>{draggableLabel}</Text>
       </DraggableView>
-    </>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  content: {
-    flex: 1,
+  gridContainer: {
     position: 'relative',
-  },
-  draggable: {
-    position: 'absolute',
-    backgroundColor: '#e0e0e0',
-    padding: 20,
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    width: '100%',
+    marginTop: 20,
   },
   target: {
     position: 'absolute',
-    width: 100,
-    height: 100,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: {
@@ -152,6 +149,11 @@ const styles = StyleSheet.create({
   },
   blueTarget: {
     backgroundColor: '#bbdefb',
+  },
+  draggable: {
+    backgroundColor: '#e0e0e0',
+    padding: 20,
+    borderRadius: 8,
   },
   tokenHovered: {
     borderWidth: 2,

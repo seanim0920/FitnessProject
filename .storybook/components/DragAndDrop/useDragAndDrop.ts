@@ -1,12 +1,8 @@
 import { useEffect, useState } from "react"
 import { PanGesture } from "react-native-gesture-handler"
-import {
-  runOnJS,
-  SharedValue,
-  useAnimatedReaction
-} from "react-native-reanimated"
-import { useDragContext } from "../DragContext/useDragContext"
-import { useDraggableContext } from "../DragContext/useDraggableContext"
+import { SharedValue } from "react-native-reanimated"
+import { usePanGesture } from "../DraggableView/usePanGesture"
+import { useHoverContext } from "../HoverContext/useHoverContext"
 
 type DragAndDropOption = {
   isSelecting: boolean
@@ -14,9 +10,9 @@ type DragAndDropOption = {
 }
 
 type DragAndDropToken = {
-  isDragging: boolean
-  dragGesture: PanGesture
-  tokenPosition: {
+  isPanning: boolean
+  panGesture: PanGesture
+  panPosition: {
     x: SharedValue<number>
     y: SharedValue<number>
   }
@@ -28,50 +24,36 @@ type DragAndDrop<T extends readonly string[]> = {
   token: DragAndDropToken
 }
 
+// make a version that exports an options factory for the infinite game idea
 export const useDragAndDrop = <const T extends readonly string[]>(
   options: T,
   onSelect: (id?: string) => void
 ): DragAndDrop<T> => {
-  const {
-    extension: {
-      isPanning,
-      panGesture: dragGesture,
-      panPosition: tokenPosition
-    }
-  } = useDraggableContext()
-
-  const [isDragging, setIsDragging] = useState(false)
-
-  useAnimatedReaction(
-    () => isPanning.value,
-    (currentValue) => {
-      runOnJS(setIsDragging)(currentValue)
-    }
-  )
+  const { isPanning: isTokenPanning, panPosition, panGesture } = usePanGesture()
 
   const dragAndDropOptions = options.reduce<
     Partial<{ [K in T[number]]: DragAndDropOption }>
   >((acc, option) => {
-    const { isHovering, onLayout } = useDragContext()
-    const [isSelecting, setIsSelecting] = useState(false)
+    const { onLayout, isSelecting } = useHoverContext()
+    const [isTokenSelecting, setIsTokenSelecting] = useState(false)
 
     useEffect(() => {
-      if (isPanning.value) {
+      if (isTokenPanning) {
         onSelect()
       }
-      if (isPanning.value) {
-        if (isHovering) {
-          setIsSelecting(true)
+      if (isTokenPanning) {
+        if (isSelecting) {
+          setIsTokenSelecting(true)
         } else {
-          setIsSelecting(false)
+          setIsTokenSelecting(false)
         }
       }
-      if (!isPanning.value) {
-        if (isSelecting) {
+      if (!isTokenPanning) {
+        if (isTokenSelecting) {
           onSelect(option)
         }
       }
-    }, [isPanning.value, isHovering])
+    }, [isTokenPanning, isSelecting])
 
     return {
       ...acc,
@@ -85,9 +67,9 @@ export const useDragAndDrop = <const T extends readonly string[]>(
   return {
     ...dragAndDropOptions,
     token: {
-      isDragging,
-      dragGesture,
-      tokenPosition
+      isPanning: isTokenPanning,
+      panGesture,
+      panPosition
     }
   } as DragAndDrop<T>
 }
