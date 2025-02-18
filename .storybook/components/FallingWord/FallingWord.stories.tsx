@@ -45,10 +45,11 @@ export const Basic = () => {
         {words.map(({ id, text }) => (
           <FallingWord
             key={id}
-            text={text}
             onCollide={() => console.log("colliding!")}
             onExit={() => handleWordExit(id)}
-          />
+          >
+            {text}
+          </FallingWord>
         ))}
       </SafeAreaView>
     </CollisionProvider>

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Text, useWindowDimensions } from 'react-native';
+import { Text, TextStyle, useWindowDimensions, ViewStyle } from 'react-native';
 import {
-  Easing,
   cancelAnimation,
+  Easing,
   runOnJS,
   useDerivedValue,
   useSharedValue,
@@ -11,23 +11,28 @@ import {
   withTiming
 } from 'react-native-reanimated';
 import { AnimatedCollidingTarget } from '../CollisionContext/AnimatedCollidingTarget';
+import { Target } from '../HoverContext/types';
 
 const INITIAL_VELOCITY_RANGE = [0.25, 1];
 const GRAVITY = 0.025;
 const MAX_VELOCITY = 7.5;
 
 export type FallingWordProps = {
-  text: string;
+  children: React.ReactNode;
   onExit?: () => void;
-  onCollide?: () => void;
+  onCollide?: (targets: Target[]) => void;
   startX?: number;
+  containerStyle?: ViewStyle;
+  textStyle?: TextStyle;
 };
 
 export const FallingWord = ({ 
-  text, 
+  children, 
   onExit,
   onCollide,
   startX,
+  containerStyle,
+  textStyle
 }: FallingWordProps) => {
   const { height, width } = useWindowDimensions();
   const [isVisible, setIsVisible] = useState(true);
@@ -96,18 +101,20 @@ export const FallingWord = ({
         shadowOpacity: 0.5,
         shadowRadius: 8,
         elevation: 10,
+        ...containerStyle
       }}
       animatedPosition={position}
       onCollide={onCollide}
     >
       <Text style={{
-        color: '#63b3ed',
+        color: '#f5fbff',
         fontWeight: '800',
         textShadowColor: 'rgba(66, 153, 225, 0.5)',
         textShadowOffset: { width: 0, height: 0 },
         textShadowRadius: 10,
+        ...textStyle
       }}>
-        {text}
+        {children}
       </Text>
     </AnimatedCollidingTarget>
   );

@@ -5,10 +5,11 @@ import Animated, {
   useAnimatedStyle
 } from 'react-native-reanimated';
 import { useCollisionContext } from "./useCollisionContext";
+import { Target } from '../HoverContext/types';
 
 type AnimatedCollidingTargetProps = ViewProps & {
   animatedPosition: SharedValue<{ x: number; y: number }>;
-  onCollide?: () => void;
+  onCollide?: (targets: Target[]) => void;
 }
 
 export const AnimatedCollidingTarget = ({

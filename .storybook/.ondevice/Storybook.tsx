@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 
+import FallingWordVariantsMeta, { Basic as FallingWordVariants } from "../components/FallingWordVariants/FallingWordVariants.stories";
+
 import FallingWordMeta, { Basic as FallingWord } from "../components/FallingWord/FallingWord.stories";
 
 import CollisionContextMeta, { Basic as CollisionContext } from "../components/CollisionContext/CollisionContext.stories";
@@ -118,6 +120,12 @@ addLogHandler(
 
 // Create an array of stories
 const stories = [
+  {
+    name: FallingWordVariantsMeta.title,
+    component: FallingWordVariants,
+    args: FallingWordVariantsMeta.args
+  },
+
   {
     name: FallingWordMeta.title,
     component: FallingWord,

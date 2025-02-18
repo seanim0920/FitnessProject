@@ -58,7 +58,9 @@ export const useCollisionContext = ({
     if (!areArraysEqual(collidingTargets, newCollidingTargets)) {
       runOnJS(setCollidingTargets)(newCollidingTargets)
       if (onCollide) {
-        runOnJS(onCollide)(newCollidingTargets)
+        runOnJS(onCollide)(
+          newCollidingTargets.filter((t) => t.id !== target.id)
+        )
       }
     }
   }
