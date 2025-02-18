@@ -10,11 +10,8 @@ export const CollisionContext = createContext<
     unregisterTarget: (id: string) => void;
     checkCollidingTargets: (measurements: SharedValue<Measurements>) => Target[]
   }
->({
-  registerTarget: () => {},
-  unregisterTarget: () => {},
-  checkCollidingTargets: () => []
-});
+  | null
+>(null);
 
 const HIT_SLOP = 0;
 

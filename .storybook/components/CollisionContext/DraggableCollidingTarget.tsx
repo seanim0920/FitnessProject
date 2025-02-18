@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, ViewProps, ViewStyle } from 'react-native';
+import { ViewProps, ViewStyle } from 'react-native';
 import { DraggableView } from '../DraggableView/DraggableView';
 import { usePanGesture } from '../DraggableView/usePanGesture';
 import { useCollisionContext } from './useCollisionContext';
@@ -16,7 +16,7 @@ export const DraggableCollidingTarget = ({
   ...props 
 }: DraggableCollidingTargetProps) => {
   const localDraggable = usePanGesture();
-  const { onAnimatedLayoutChange, onLayout, collidingTargets } = useCollisionContext();
+  const { onAnimatedLayoutChange, onLayout, collidingTargets } = useCollisionContext({});
 
   return (
     <DraggableView
@@ -31,8 +31,6 @@ export const DraggableCollidingTarget = ({
         collidingTargets.length > 1 && collidingStyle
       ]}
       {...props}
-    >
-      <Text>Drag me!</Text>
-    </DraggableView>
+    />
   );
 }

@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 
+import FallingWordMeta, { Basic as FallingWord } from "../components/FallingWord/FallingWord.stories";
+
 import CollisionContextMeta, { Basic as CollisionContext } from "../components/CollisionContext/CollisionContext.stories";
 import HoverContextMeta, { Basic as HoverContext } from "../components/HoverContext/HoverContext.stories";
 
@@ -10,6 +12,7 @@ import DraggableViewMeta, {
   Basic as DraggableView
 } from "../components/DraggableView/DraggableView.stories";
 
+import ShieldDefenseMeta, { Basic as ShieldDefense } from "../components/GuardUp/GuardUp.stories";
 import MapSnippetMeta, {
   Basic as MapSnippet
 } from "../components/MapSnippet/MapSnippet.stories";
@@ -69,7 +72,6 @@ import EventSettingsDurationMeta, {
   Basic as EventSettingsDurationBasic
 } from "../components/SettingsScreen/EventSettingsDurations.stories";
 
-import ShieldDefenseMeta, { Basic as ShieldDefense } from ".storybook/components/ShieldDefense/ShieldDefense.stories";
 import { sqliteLogHandler, sqliteLogs } from "@lib/Logging";
 import { InMemorySecureStore } from "@lib/SecureStore";
 import { dayjs } from "TiFShared/lib/Dayjs";
@@ -116,6 +118,12 @@ addLogHandler(
 
 // Create an array of stories
 const stories = [
+  {
+    name: FallingWordMeta.title,
+    component: FallingWord,
+    args: FallingWordMeta.args
+  },
+
   {
     name: DragAndDropMeta.title,
     component: DragAndDrop

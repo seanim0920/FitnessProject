@@ -47,107 +47,7 @@ interface CollisionRect {
 export const ShieldDefenseGame: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>("title");
   const [score, setScore] = useState(0);
-  const [fallingObjects, setFallingObjects] = useState<FallingObject[]>([]);
   const [lives, setLives] = useState(3);
-
-  // Setup drag and drop system for the shield
-  const shieldTargets = useDragAndDrop(['shield'] as const, () => {}) as DragAndDrop<readonly ['shield']>;
-  const { token } = shieldTargets;
-
-  // Generate new falling objects
-  const generateObject = useCallback((): void => {
-    const newObject: FallingObject = {
-      id: Math.random().toString(),
-      x: Math.random() * (SCREEN_WIDTH - 50),
-      y: SCREEN_HEIGHT,
-      speed: Math.random() * 2 + 1,
-      type: Math.random() > 0.5 ? 'enemy' : 'bonus'
-    };
-    setFallingObjects(prev => [...prev, newObject]);
-  }, []);
-
-  // Game loop
-  useEffect(() => {
-    if (gameState !== "playing") return;
-
-    const gameLoop = setInterval(() => {
-      setFallingObjects(prev => {
-        return prev.map(obj => ({
-          ...obj,
-          y: obj.y - (obj.speed * 5)
-        })).filter(obj => {
-          if (obj.y < 0) {
-            // Object hit bottom
-            if (obj.type === 'enemy') {
-              setLives(prev => {
-                const newLives = prev - 1;
-                if (newLives <= 0) {
-                  setGameState("game_over");
-                }
-                return newLives;
-              });
-            }
-            return false;
-          }
-          return true;
-        });
-      });
-    }, 16);
-
-    const spawnLoop = setInterval(generateObject, 2000);
-
-    return () => {
-      clearInterval(gameLoop);
-      clearInterval(spawnLoop);
-    };
-  }, [gameState, generateObject]);
-
-  // Collision detection
-  useEffect(() => {
-    if (!token.tokenPosition || gameState !== "playing") return;
-
-    const shieldPos: CollisionRect = {
-      x: token.tokenPosition.x.value,
-      y: token.tokenPosition.y.value,
-      width: 100,
-      height: 100
-    };
-
-    setFallingObjects(prev => {
-      return prev.filter(obj => {
-        const collision = checkCollision(shieldPos, {
-          x: obj.x,
-          y: obj.y,
-          width: 50,
-          height: 50
-        });
-
-        if (collision) {
-          if (obj.type === 'bonus') {
-            setScore(prev => prev + 100);
-          } else {
-            setScore(prev => prev + 50);
-          }
-          return false;
-        }
-        return true;
-      });
-    });
-  }, [token.tokenPosition, gameState]);
-
-  const checkCollision = (rect1: CollisionRect, rect2: CollisionRect): boolean => {
-    return !(rect1.x > rect2.x + rect2.width || 
-             rect1.x + rect1.width < rect2.x || 
-             rect1.y > rect2.y + rect2.height ||
-             rect1.y + rect1.height < rect2.y);
-  };
-
-  const startGame = (): void => {
-    setGameState("playing");
-    setScore(0);
-    setLives(3);
-    setFallingObjects([]);
-  };
 
   if (gameState === "title") {
     return (
@@ -180,32 +80,6 @@ export const ShieldDefenseGame: React.FC = () => {
         <Text style={styles.hudText}>Score: {score}</Text>
         <Text style={styles.hudText}>Lives: {'❤️'.repeat(lives)}</Text>
       </View>
-
-      {/* Falling Objects */}
-      {fallingObjects.map(obj => (
-        <Animated.View
-          key={obj.id}
-          style={[
-            styles.fallingObject,
-            {
-              left: obj.x,
-              top: obj.y,
-              backgroundColor: obj.type === 'enemy' ? '#f56565' : '#48bb78'
-            }
-          ]}
-        />
-      ))}
-
-      {/* Shield */}
-      <DraggableView
-        draggable={{
-          panGesture: token.dragGesture,
-          panPosition: token.tokenPosition
-        }}
-        style={[styles.shield]}
-      >
-        <Text style={styles.shieldText}>Shield</Text>
-      </DraggableView>
     </View>
   );
 };

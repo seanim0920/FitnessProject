@@ -24,9 +24,19 @@ export const DEFAULT_MEASUREMENT = {
   height: 0
 }
 
-export const useCollisionContext = (): DragState => {
-  const { registerTarget, unregisterTarget, checkCollidingTargets } =
-    useContext(CollisionContext)
+export const useCollisionContext = ({
+  onCollide
+}: {
+  onCollide?: (collidingTargets: Target[]) => void
+}): DragState => {
+  const context = useContext(CollisionContext)
+  if (!context) {
+    throw new Error(
+      "useCollisionContext must be used inside a CollisionProvider"
+    )
+  }
+
+  const { registerTarget, unregisterTarget, checkCollidingTargets } = context
 
   const targetId = useRef<string>(uuidString())
 
@@ -39,15 +49,23 @@ export const useCollisionContext = (): DragState => {
 
   const [collidingTargets, setCollidingTargets] = useState<Target[]>([target])
 
+  const updateCollidingTargets = (
+    updatedMeasurements: SharedValue<Measurements>
+  ) => {
+    "worklet"
+    const newCollidingTargets = checkCollidingTargets(updatedMeasurements)
+
+    if (!areArraysEqual(collidingTargets, newCollidingTargets)) {
+      runOnJS(setCollidingTargets)(newCollidingTargets)
+      if (onCollide) {
+        runOnJS(onCollide)(newCollidingTargets)
+      }
+    }
+  }
+
   const onLayout = (event: LayoutChangeEvent) => {
     measurements.value = event.nativeEvent.layout
-    runOnUI((value: SharedValue<Measurements>) => {
-      const newCollidingTargets = checkCollidingTargets(value)
-
-      if (!areArraysEqual(collidingTargets, newCollidingTargets)) {
-        runOnJS(setCollidingTargets)(newCollidingTargets)
-      }
-    })(measurements)
+    runOnUI(updateCollidingTargets)(measurements)
   }
 
   const onAnimatedLayoutChange = (layout: Partial<Measurements>) => {
@@ -57,11 +75,7 @@ export const useCollisionContext = (): DragState => {
       ...layout
     }
 
-    const newCollidingTargets = checkCollidingTargets(measurements)
-
-    if (!areArraysEqual(collidingTargets, newCollidingTargets)) {
-      runOnJS(setCollidingTargets)(newCollidingTargets)
-    }
+    updateCollidingTargets(measurements)
   }
 
   useEffect(() => {
