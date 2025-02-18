@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 
+import GuardComponentMeta, { Basic as GuardComponent } from "../components/GuardComponent/GuardComponent.stories";
+
 import FallingWordVariantsMeta, { Basic as FallingWordVariants } from "../components/FallingWordVariants/FallingWordVariants.stories";
 
 import FallingWordMeta, { Basic as FallingWord } from "../components/FallingWord/FallingWord.stories";
@@ -120,6 +122,12 @@ addLogHandler(
 
 // Create an array of stories
 const stories = [
+  {
+    name: GuardComponentMeta.title,
+    component: GuardComponent,
+    args: GuardComponentMeta.args
+  },
+
   {
     name: FallingWordVariantsMeta.title,
     component: FallingWordVariants,
