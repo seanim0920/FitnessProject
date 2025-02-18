@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Gesture, PanGesture } from "react-native-gesture-handler"
 import { runOnJS, SharedValue, useSharedValue } from "react-native-reanimated"
 import { Point } from "../HoverContext/types"
@@ -47,10 +47,7 @@ export const usePanGesture = (
 
   return {
     panGesture,
-    panPosition: {
-      x: panX,
-      y: panY
-    },
+    panPosition: useMemo(() => ({ x: panX, y: panY }), [panX, panY]),
     isPanning
   }
 }
