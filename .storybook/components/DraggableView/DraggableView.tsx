@@ -24,8 +24,8 @@ export const DraggableView = ({
   style,
   draggable: {onLayout, onAnimatedLayoutChange, panGesture, panPosition}
 }: ViewProps & {draggable: Draggable}) => {
-  const initialLayoutX = useSharedValue<number>(0);
-  const initialLayoutY = useSharedValue<number>(0);
+  const initialLayoutX = useSharedValue<number | null>(null);
+  const initialLayoutY = useSharedValue<number | null>(null);
 
   useAnimatedReaction(
     () => ({
@@ -33,14 +33,18 @@ export const DraggableView = ({
       y: panPosition.y.value
     }),
     (currentPosition, previousPosition) => {
+      if (!initialLayoutX.value || !initialLayoutY.value) return;
+
       onAnimatedLayoutChange?.({
-        x: initialLayoutX.value + (currentPosition.x - (previousPosition?.x ?? 0)),
-        y: initialLayoutY.value + (currentPosition.y - (previousPosition?.y ?? 0)),
+        x: initialLayoutX.value + (currentPosition.x),
+        y: initialLayoutY.value + (currentPosition.y),
       });
     }
   );
 
   const handleInitialLayout = (event: LayoutChangeEvent) => {
+    if (initialLayoutX.value && initialLayoutY.value) return;
+
     initialLayoutX.value = event.nativeEvent.layout.x;
     initialLayoutY.value = event.nativeEvent.layout.y;
     onLayout?.(event);

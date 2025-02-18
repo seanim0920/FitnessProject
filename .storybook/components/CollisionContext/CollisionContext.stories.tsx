@@ -1,60 +1,51 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { DraggableTarget } from './DraggableTarget';
-import { HoverProvider } from './HoverContext';
-import { DragTarget } from './HoverTarget';
+import { CollisionProvider } from './CollisionContext';
+import { DraggableCollidingTarget } from './DraggableCollidingTarget';
 
-export const HoverContextMeta = {
-  title: "HoverContext",
+export const CollidingContextMeta = {
+  title: "CollidingContext",
 };
 
-export default HoverContextMeta;
+export default CollidingContextMeta;
 
 export const Basic = () => {
   return (
-    <GestureHandlerRootView style={styles.container}>
-      <HoverProvider>
+    <CollisionProvider>
+      <GestureHandlerRootView style={styles.container}>
         <View style={styles.content}>
-          <DragTarget
+          <DraggableCollidingTarget
             style={[
               styles.target,
-              styles.redTarget,
-              { bottom: 500, left: '50%', marginLeft: -50 },
-            ]}
-            selectingStyle={styles.targetSelecting}
-            activeStyle={styles.targetHovered}
-          />
-          <DragTarget
-            style={[
-              styles.target,
-              styles.blueTarget,
-              { bottom: 300, left: '50%', marginLeft: -50 },
-            ]}
-            selectingStyle={styles.targetSelecting}
-            activeStyle={styles.targetHovered}
-          />
-          <DragTarget
-            style={[
-              styles.target,
-              styles.greenTarget,
-              { bottom: 100, left: '50%', marginLeft: -50 },
-            ]}
-            selectingStyle={styles.targetSelecting}
-            activeStyle={styles.targetHovered}
-          />
-          <DraggableTarget
-            style={[
-              styles.target,
-              styles.draggable
+              styles.draggable,
+              {
+                top: "25%",
+                left: "50%"
+              }
             ]}
             activeStyle={styles.targetHovered}
+            collidingStyle={styles.targetSelecting}
           >
             <Text>Drag me!</Text>
-          </DraggableTarget>
+          </DraggableCollidingTarget>
+          <DraggableCollidingTarget
+            style={[
+              styles.target,
+              styles.draggable,
+              {
+                top: "75%",
+                left: "50%"
+              }
+            ]}
+            activeStyle={styles.targetHovered}
+            collidingStyle={styles.targetSelecting}
+          >
+            <Text>Drag me!</Text>
+          </DraggableCollidingTarget>
         </View>
-      </HoverProvider>
-    </GestureHandlerRootView>
+      </GestureHandlerRootView>
+    </CollisionProvider>
   );
 };
 

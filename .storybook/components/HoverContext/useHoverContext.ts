@@ -49,6 +49,7 @@ export const useHoverContext = (): DragState => {
 
   const onAnimatedLayoutChange = (layout: Partial<Measurements>) => {
     "worklet"
+    console.log("new layout is ", layout)
     measurements.value = {
       ...layout,
       ...measurements.value

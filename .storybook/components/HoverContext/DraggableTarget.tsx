@@ -14,13 +14,12 @@ export const DraggableTarget = ({
   ...props 
 }: DraggableTargetProps) => {
   const localDraggable = usePanGesture();
-  const { hoverGesture, onAnimatedLayoutChange } = useHoverContext();
+  const { hoverGesture, } = useHoverContext();
 
   return (
     <DraggableView
       draggable={{
-        ...localDraggable, 
-        onAnimatedLayoutChange,
+        ...localDraggable,
         panGesture: localDraggable.panGesture.simultaneousWithExternalGesture(hoverGesture)
       }}
       style={[style, localDraggable.isPanning === true && activeStyle]}

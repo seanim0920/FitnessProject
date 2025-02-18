@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 
-import DragTargetMeta, { Basic as DragTarget } from "../components/HoverContext/HoverContext.stories";
+import CollisionContextMeta, { Basic as CollisionContext } from "../components/CollisionContext/CollisionContext.stories";
+import HoverContextMeta, { Basic as HoverContext } from "../components/HoverContext/HoverContext.stories";
 
 import DragAndDropMeta, {
   Basic as DragAndDrop
@@ -120,8 +121,12 @@ const stories = [
     component: DragAndDrop
   },
   {
-    name: DragTargetMeta.title,
-    component: DragTarget
+    name: HoverContextMeta.title,
+    component: HoverContext
+  },
+  {
+    name: CollisionContextMeta.title,
+    component: CollisionContext
   },
   {
     name: DraggableViewMeta.title,
