@@ -1,4 +1,8 @@
 import { InMemorySecureStore, SecureStore } from "@lib/SecureStore"
+import {
+  CallbackCollection,
+  CallbackCollectionUnsubscribe
+} from "@lib/utils/CallbackCollection"
 import { UserSession, UserSessionProvider } from "@user/Session"
 import { EmailAddress } from "@user/privacy"
 import { TiFAPI } from "TiFShared/api"
@@ -41,6 +45,8 @@ const AlphaUserTokenBodySchema = z.object({
  * A class that stores user data for Alpha users.
  */
 export class AlphaUserStorage {
+  private subscribers = new CallbackCollection<AlphaUser>()
+
   // eslint-disable-next-line no-useless-constructor
   constructor(private readonly _store: SecureStore) {}
 
@@ -71,6 +77,19 @@ export class AlphaUserStorage {
    */
   async store(token: string) {
     await this._store.setItemAsync(ALPHA_USER_STORAGE_KEY, token)
+    const userResult = await AlphaUserTokenBodySchema.safeParseAsync(
+      jwtBody(token)
+    )
+    if (userResult.success) {
+      this.subscribers.send({ ...userResult.data, token })
+    }
+  }
+
+  subscribe(fn: (user: AlphaUser) => void) {
+    this.user().then((user) => {
+      if (user) fn(user)
+    })
+    return this.subscribers.add(fn)
   }
 
   /**
