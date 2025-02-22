@@ -1,13 +1,17 @@
 import { Auth } from "@aws-amplify/auth"
 import { SecureStore } from "@lib/SecureStore"
 import * as ExpoSecureStore from "expo-secure-store"
+import awsExports from "src/aws-exports"
 import awsmobile from "../src/aws-exports"
+import { CognitoSecureStorage } from "./CognitoSecureStorage"
 
 /**
  * Sets up cognito with a secure store.
  */
 export const setupCognito = (secureStore: SecureStore = ExpoSecureStore) => {
   Auth.configure({
+    ...awsExports,
+    storage: new CognitoSecureStorage(secureStore),
     identityPoolId: awsmobile.aws_cognito_identity_pool_id,
     region: awsmobile.aws_cognito_region,
     userPoolId: awsmobile.aws_user_pools_id,
