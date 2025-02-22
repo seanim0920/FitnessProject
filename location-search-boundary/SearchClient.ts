@@ -9,7 +9,9 @@ import {
   LocationCoordinate2D,
   areCoordinatesEqual
 } from "TiFShared/domain-models/LocationCoordinate2D"
+import { logger } from "TiFShared/logging"
 
+const log = logger("location.searchClient")
 /**
  * An result that is displayed by the location search.
  */
@@ -114,7 +116,7 @@ export const awsLocationSearch = async (
     countries: ["USA"],
     maxResults: 10,
     biasPosition: center ? [center.longitude, center.latitude] : undefined
-  })
+  }).catch((error) => log.error(error))
   return results.ext.compactMap((place: Place) => {
     if (!place.geometry) return undefined
     return {
