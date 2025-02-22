@@ -17,7 +17,7 @@ export default SunJournalBackgroundMeta
 
 export const Basic = () => (
   <SafeAreaProvider>
-    <CanvasView />
+    <TimeOfDayView />
   </SafeAreaProvider>
 )
 
@@ -81,7 +81,7 @@ const getDayFraction = () => {
   return fraction;
 }
 
-const CanvasView = () => {
+export const TimeOfDayView = () => {
   const [size, setSize] = useState<SkSize>({ width: 0, height: 0 })
   const insets = useSafeAreaInsets()
   const background = useMemo(
